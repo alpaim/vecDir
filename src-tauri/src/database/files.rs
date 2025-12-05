@@ -1,4 +1,4 @@
-use sqlx;
+use sqlx::{self, QueryBuilder};
 use crate::database::DbPool;
 
 use super::models::FileMetadata;
@@ -42,6 +42,32 @@ pub async fn get_pending_files(pool: &DbPool, limit: i64) -> Result<Vec<FileMeta
         "SELECT * FROM files_metadata WHERE indexing_status = 'pending' LIMIT ?"
     )
     .bind(limit)
+    .fetch_all(pool)
+    .await
+}
+
+pub async fn get_files_by_ids(pool: &DbPool, ids: Vec<i64>) -> Result<Vec<FileMetadata>, sqlx::Error> {
+    if ids.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let mut query_builder = QueryBuilder::new("SELECT * FROM files_metadata WHERE id IN (");
+
+    let mut separated = query_builder.separated(", ");
+    for id in ids {
+        separated.push_bind(id);
+    }
+    separated.push_unseparated(")");
+
+    let query = query_builder.build_query_as::<FileMetadata>();
+
+    query.fetch_all(pool).await
+}
+
+pub async fn get_all_files(pool: &DbPool) -> Result<Vec<FileMetadata>, sqlx::Error> {
+    sqlx::query_as::<_, FileMetadata>(
+        "SELECT * FROM files_metadata"
+    )
     .fetch_all(pool)
     .await
 }
