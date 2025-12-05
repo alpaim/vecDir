@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS spaces (
     name TEXT NOT NULL,
     description TEXT,
     
+    llm_config JSON NOT NULL,
     embedding_config JSON NOT NULL, 
     
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
