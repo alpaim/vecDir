@@ -73,7 +73,20 @@ pub async fn add_embedding(
     Ok(())
 }
 
+pub async fn delete_emdedding(
+    db: &Connection,
+    space_id: i64,
+    file_id_to_delete: i64,
+) -> Result<(), lancedb::Error> {
+    let talbe_name = get_table_name(space_id);
+    let table = db.open_table(&talbe_name).execute().await?;
 
+    let predicate = format!("file_id = {}", file_id_to_delete);
+
+    table.delete(&predicate).await?;
+
+    Ok(())
+}
 
 pub async fn search_embeddings(
     db: &Connection,
@@ -82,9 +95,7 @@ pub async fn search_embeddings(
     limit: usize,
 ) -> Result<Vec<VectorSearchResult>, lancedb::Error> {
     let table_name = get_table_name(space_id);
-    let table = db.open_table(&table_name)
-        .execute()
-        .await?;
+    let table = db.open_table(&table_name).execute().await?;
 
     let mut result_vec: Vec<VectorSearchResult> = Vec::new();
 
