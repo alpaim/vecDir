@@ -49,4 +49,4 @@ CREATE TABLE IF NOT EXISTS files_metadata (
 
 CREATE INDEX idx_files_path ON files_metadata(absolute_path);
 CREATE INDEX idx_files_status ON files_metadata(indexing_status);
-CREATE INDEX idx_files_ext ON files_metadata(extension);
+CREATE INDEX idx_files_ext ON files_metadata(file_extension);
