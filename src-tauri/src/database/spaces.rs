@@ -1,22 +1,23 @@
 use sqlx::{types::Json};
-use crate::database::DbPool;
-
-use super::models::{Space, EmbeddingConfig};
+use crate::database::{DbPool, models::{LLMConfig, EmbeddingConfig, Space}};
 
 pub async fn create_space(
     pool: &DbPool, 
     name: &str, 
-    config: EmbeddingConfig
+    llm_config: LLMConfig,
+    embedding_config: EmbeddingConfig
 ) -> Result<i64, sqlx::Error> {
-    let config_json = Json(config);
+    let llm_config_json = Json(llm_config);
+    let embedding_config_json = Json(embedding_config);
     let record = sqlx::query!(
         r#"
-        INSERT INTO spaces (name, embedding_config)
-        VALUES (?, ?)
+        INSERT INTO spaces (name, llm_config, embedding_config)
+        VALUES (?, ?, ?)
         RETURNING id
         "#,
         name,
-        config_json
+        llm_config_json,
+        embedding_config_json
     )
     .fetch_one(pool)
     .await?;

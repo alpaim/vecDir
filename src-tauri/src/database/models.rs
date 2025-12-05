@@ -3,11 +3,46 @@ use sqlx::FromRow;
 use chrono::NaiveDateTime;
 use sqlx::types::Json;
 
+// APP CONFIG
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AppConfig {
+    // UI
+    #[serde(default = "default_theme")]
+    pub theme: String, // "light", "dark", "system"
+
+    // Indexer Settings
+    #[serde(default = "default_parallelism")]
+    pub indexer_parallelism: usize, // How many files vecDir needs to index in parallel (2-4)
+    
+    // AI Settings (Global defaults)
+    pub default_openai_url: Option<String>,
+}
+
+// Default values
+fn default_theme() -> String { "system".to_string() }
+fn default_parallelism() -> usize { 2 }
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            theme: default_theme(),
+            indexer_parallelism: default_parallelism(),
+            default_openai_url: None
+        }
+    }
+}
+
 // SPACES
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LLMConfig {
+    pub open_ai_base_url: String,
+    pub model: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EmbeddingConfig {
-    pub provider: String, // "openai", "local"
+    pub open_ai_base_url: String,
     pub model: String,
     pub dimensions: i32,
 }
