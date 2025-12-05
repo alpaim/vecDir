@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS indexed_roots (
     space_id INTEGER NOT NULL,            -- link to spaces
     path TEXT UNIQUE NOT NULL,            -- abosolute path 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status TEXT DEFAULT "active"          -- "active", "paused"
+    status TEXT DEFAULT "active",         -- "active", "paused"
 
     FOREIGN KEY(space_id) REFERENCES spaces(id) ON DELETE CASCADE,
     UNIQUE(space_id, path)
