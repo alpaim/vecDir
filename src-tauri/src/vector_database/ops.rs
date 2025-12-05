@@ -1,8 +1,11 @@
+use futures::TryStreamExt;
+use lancedb::arrow::IntoArrowStream;
 use lancedb::connection::Connection;
 use lancedb::Table;
 use arrow_array::{RecordBatch, RecordBatchIterator};
 use arrow_array::{Int64Array, FixedSizeListArray, Float32Array};
 use arrow_schema::{DataType, Field};
+use lancedb::query::{ExecutableQuery, QueryBase};
 use std::sync::Arc;
 use crate::vector_database::schema::{VectorSearchResult, get_embeddings_schema};
 
@@ -78,5 +81,26 @@ pub async fn search_embeddings(
     query_vector: Vec<f32>,
     limit: usize,
 ) -> Result<Vec<VectorSearchResult>, lancedb::Error> {
-    todo!();
+    let table_name = get_table_name(space_id);
+    let table = db.open_table(&table_name)
+        .execute()
+        .await?;
+
+    let mut result_vec: Vec<VectorSearchResult> = Vec::new();
+
+    let mut stream = table
+        .query()
+        .nearest_to(query_vector)?
+        .limit(limit)
+        .execute()
+        .await?;
+
+    while let Some(batch) = stream.try_next().await? {
+        let batch_results: Vec<VectorSearchResult> = serde_arrow::from_record_batch(&batch)
+        .map_err(|e| lancedb::Error::Runtime { message: e.to_string() })?;
+        
+        result_vec.extend(batch_results);
+    }
+
+    Ok(result_vec)
 }

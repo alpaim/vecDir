@@ -1,9 +1,12 @@
+use serde::{self, Deserialize};
 use arrow_schema::{DataType, Field, Schema};
 use std::sync::Arc;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct VectorSearchResult {
     pub file_id: i64,
+
+    #[serde(rename = "_distance")] // mapping LanceDB system _distance into distance: f32
     pub distance: f32,
 }
 
