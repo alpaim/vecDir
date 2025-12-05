@@ -4,6 +4,7 @@ use crate::state::AppState;
 
 mod state;
 mod database;
+mod vector_database;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -20,10 +21,12 @@ pub fn run() {
             let app_dir = app_handle.path().app_data_dir().expect("failed to get app data dir");
 
             tauri::async_runtime::block_on(async {
-                let pool = database::init::initialize_database(&app_dir).await
+                let sqlx_pool = database::init::initialize_database(&app_dir).await
                     .expect("failed to initialize database");
+                let vec_db_connection = vector_database::init::initialize_vector_database(&app_dir).await
+                    .expect("failed to initialize vector database");
                 
-                let state = AppState::new(pool);
+                let state = AppState::new(sqlx_pool, vec_db_connection);
                 app.manage(state);
             });
 
