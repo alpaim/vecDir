@@ -1,4 +1,4 @@
-use tauri::Manager;
+use tauri::{AppHandle, Emitter, Manager, State};
 
 use crate::state::AppState;
 
@@ -7,9 +7,10 @@ mod database;
 mod vector_database;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+// This function/command checks if app state is ready
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+fn check_is_state_ready(app: AppHandle) -> bool {
+    app.try_state::<AppState>().is_some()
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -29,17 +30,13 @@ pub fn run() {
                 let state = AppState::new(sqlx_pool, vec_db_connection);
                 app_handle.manage(state);
 
-                if let Some(splash) = app_handle.get_webview_window("splashscreen") {
-                    splash.close().expect("failed to close spashscreen");
-                }
-                if let Some(main) = app_handle.get_webview_window("main") {
-                    main.show().expect("failed to open main window");
-                }
+                // emitting event to frontend telling backend is ready
+                app_handle.emit("backend-is-ready", ())
             });
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![check_is_state_ready])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
