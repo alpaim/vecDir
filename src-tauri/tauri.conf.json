@@ -14,14 +14,6 @@
             {
                 "label": "main",
                 "title": "vecdir",
-                "visible": false,
-                "width": 800,
-                "height": 600
-            },
-            {
-                "label": "splashscreen",
-                "title": "vecdir",
-                "url": "/splashscreen",
                 "visible": true,
                 "width": 800,
                 "height": 600
