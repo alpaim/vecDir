@@ -4,14 +4,20 @@ use anyhow::{Ok, Result};
 use chrono::{DateTime, Utc};
 use sqlx::{self, QueryBuilder};
 
+pub struct UpsertFile {
+    pub root_id: i64,
+    pub path: String,
+    pub filename: String,
+    pub file_extension: String,
+    pub size: i64,
+    pub modified: DateTime<Utc>,
+}
+
+pub type UpsertFilesBatch = Vec<UpsertFile>;
+
 pub async fn upsert_file(
     pool: &DbPool,
-    root_id: i64,
-    path: String,
-    filename: &str,
-    file_extension: &str,
-    size: i64,
-    modified: DateTime<Utc>,
+    file: UpsertFile
 ) -> Result<()> {
     // If the file already exists, updating its status to "pending";
     // ONLY if date of modification changes!
@@ -29,12 +35,16 @@ pub async fn upsert_file(
                 ELSE files_metadata.indexing_status
             END
         "#,
-        root_id, path, filename, file_extension, size, modified
+        file.root_id, file.path, file.filename, file.file_extension, file.size, file.modified
     )
     .execute(pool)
     .await?;
 
     Ok(())
+}
+
+pub async fn upsert_files_batch(pool: &DbPool, files: UpsertFilesBatch) -> Result<()> {
+    todo!()
 }
 
 pub async fn get_pending_files(pool: &DbPool, limit: i64) -> Result<Vec<FileMetadata>> {
