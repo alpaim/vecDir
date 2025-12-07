@@ -4,7 +4,7 @@ use crate::state::AppState;
 
 mod state;
 mod database;
-mod vector_database;
+mod vector_store;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 // This function/command checks if app state is ready
@@ -24,10 +24,8 @@ pub fn run() {
             tauri::async_runtime::spawn(async move {
                 let sqlx_pool = database::init::initialize_database(&app_dir).await
                     .expect("failed to initialize database");
-                let vec_db_connection = vector_database::init::initialize_vector_database(&app_dir).await
-                    .expect("failed to initialize vector database");
-                
-                let state = AppState::new(sqlx_pool, vec_db_connection);
+
+                let state = AppState::new(sqlx_pool, app_dir);
                 app_handle.manage(state);
 
                 // emitting event to frontend telling backend is ready
