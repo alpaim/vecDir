@@ -1,11 +1,16 @@
 use std::path::PathBuf;
 
-use crate::database::{files::upsert_file, DbPool};
+use crate::database::{
+    files::{upsert_files_batch, UpsertFile, UpsertFilesBatch},
+    DbPool,
+};
 use anyhow::{Context, Result};
 use chrono::DateTime;
 use ignore::WalkBuilder;
 
 pub async fn scan_root(pool: &DbPool, root_id: i64, root_path: &PathBuf) -> Result<()> {
+    let mut files: UpsertFilesBatch = Vec::new();
+
     let walker = WalkBuilder::new(root_path)
         .hidden(false)
         .git_ignore(true)
@@ -42,25 +47,28 @@ pub async fn scan_root(pool: &DbPool, root_id: i64, root_path: &PathBuf) -> Resu
             .file_name()
             .unwrap_or_default()
             .to_str()
-            .unwrap_or_default();
+            .unwrap_or_default()
+            .to_string();
         let file_extension = path
             .extension()
             .unwrap_or_default()
             .to_str()
-            .unwrap_or_default();
+            .unwrap_or_default()
+            .to_string();
 
-        upsert_file(
-            pool,
-            root_id,
-            path_string,
-            filename,
-            file_extension,
-            file_size,
-            modification_time,
-        )
-        .await
-        .context("database upsert failed")?;
+        files.push(UpsertFile {
+            root_id: root_id,
+            path: path_string,
+            filename: filename,
+            file_extension: file_extension,
+            size: file_size,
+            modified: modification_time,
+        });
     }
+
+    upsert_files_batch(pool, files)
+        .await
+        .context("failed to upsert batch of indexed files")?;
 
     Ok(())
 }
