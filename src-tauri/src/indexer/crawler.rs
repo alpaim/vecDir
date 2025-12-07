@@ -8,6 +8,8 @@ use anyhow::{Context, Result};
 use chrono::DateTime;
 use ignore::WalkBuilder;
 
+// TODO: optimize this function. consider using tokio channels https://docs.rs/tokio/latest/tokio/sync/mpsc/fn.channel.html
+
 pub async fn scan_root(pool: &DbPool, root_id: i64, root_path: &PathBuf) -> Result<()> {
     let mut files: UpsertFilesBatch = Vec::new();
 
