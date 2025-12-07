@@ -1,14 +1,17 @@
-use lancedb::Connection;
+use std::path::PathBuf;
 
-use crate::database::DbPool;
+use crate::{database::DbPool, vector_store::manager::VectorIndexManager};
 
 pub struct AppState {
     pub db: DbPool,
-    pub vec_db: Connection
+    pub vector_index_manager: VectorIndexManager,
 }
 
 impl AppState {
-    pub fn new(db: DbPool, vec_db: Connection) -> Self {
-        Self { db, vec_db }
+    pub fn new(db: DbPool, app_dir: PathBuf) -> Self {
+        Self { 
+            db,
+            vector_index_manager: VectorIndexManager::new(app_dir),  
+        }
     }
 }
