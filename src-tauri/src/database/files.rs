@@ -1,7 +1,7 @@
 use crate::database::models::FileMetadata;
 use crate::database::DbPool;
 use anyhow::{Ok, Result};
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use sqlx::{self, QueryBuilder};
 
 pub async fn upsert_file(
@@ -9,9 +9,9 @@ pub async fn upsert_file(
     root_id: i64,
     path: &str,
     filename: &str,
-    file_extension: Option<&str>,
+    file_extension: &str,
     size: i64,
-    modified: NaiveDateTime,
+    modified: DateTime<Utc>,
 ) -> Result<()> {
     // If the file already exists, updating its status to "pending";
     // ONLY if date of modification changes!

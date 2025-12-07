@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use sqlx::types::Json;
 
 // APP CONFIG
@@ -53,7 +53,7 @@ pub struct Space {
     pub name: String,
     pub description: Option<String>,
     pub embedding_config: Json<EmbeddingConfig>, 
-    pub created_at: NaiveDateTime,
+    pub created_at: DateTime<Utc>,
 }
 
 // ROOTS
@@ -76,8 +76,8 @@ pub struct FileMetadata {
     pub filename: String,
     pub file_extension: Option<String>,
     pub file_size: i64,
-    pub modified_at_fs: NaiveDateTime,
-    pub last_indexed_at: Option<NaiveDateTime>,
+    pub modified_at_fs: DateTime<Utc>,
+    pub last_indexed_at: Option<DateTime<Utc>>,
     pub content_hash: Option<String>,
     pub indexing_status: String,
     pub error_message: Option<String>,
