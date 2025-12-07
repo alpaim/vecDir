@@ -1,3 +1,4 @@
+use anyhow::{Result, Ok};
 use sqlx::{sqlite::{SqliteConnectOptions, SqlitePoolOptions}};
 use std::fs;
 use std::path::Path;
@@ -5,7 +6,7 @@ use std::str::FromStr;
 
 use crate::database::DbPool;
 
-pub async fn perform_migrations(pool: &DbPool) -> Result<(), sqlx::migrate::MigrateError> {
+pub async fn perform_migrations(pool: &DbPool) -> Result<()> {
     sqlx::migrate!("./migrations")
         .run(pool)
         .await?;
@@ -13,7 +14,7 @@ pub async fn perform_migrations(pool: &DbPool) -> Result<(), sqlx::migrate::Migr
     Ok(())
 }
 
-pub async fn initialize_database(app_dir: &Path) -> Result<DbPool, sqlx::Error> {
+pub async fn initialize_database(app_dir: &Path) -> Result<DbPool> {
     if !app_dir.exists() {
         fs::create_dir_all(app_dir)?;
     }
