@@ -7,7 +7,7 @@ use sqlx::{self, QueryBuilder};
 pub async fn upsert_file(
     pool: &DbPool,
     root_id: i64,
-    path: &str,
+    path: String,
     filename: &str,
     file_extension: &str,
     size: i64,
