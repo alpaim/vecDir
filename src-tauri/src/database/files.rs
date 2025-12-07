@@ -1,8 +1,8 @@
-use sqlx::{self, QueryBuilder};
+use crate::database::models::FileMetadata;
 use crate::database::DbPool;
-
-use super::models::FileMetadata;
+use anyhow::{Ok, Result};
 use chrono::NaiveDateTime;
+use sqlx::{self, QueryBuilder};
 
 pub async fn upsert_file(
     pool: &DbPool,
@@ -12,7 +12,7 @@ pub async fn upsert_file(
     file_extension: Option<&str>,
     size: i64,
     modified: NaiveDateTime,
-) -> Result<(), sqlx::Error> {
+) -> Result<()> {
     // If the file already exists, updating its status to "pending";
     // ONLY if date of modification changes!
     sqlx::query!(
@@ -37,16 +37,18 @@ pub async fn upsert_file(
     Ok(())
 }
 
-pub async fn get_pending_files(pool: &DbPool, limit: i64) -> Result<Vec<FileMetadata>, sqlx::Error> {
-    sqlx::query_as::<_, FileMetadata>(
-        "SELECT * FROM files_metadata WHERE indexing_status = 'pending' LIMIT ?"
+pub async fn get_pending_files(pool: &DbPool, limit: i64) -> Result<Vec<FileMetadata>> {
+    let res = sqlx::query_as::<_, FileMetadata>(
+        "SELECT * FROM files_metadata WHERE indexing_status = 'pending' LIMIT ?",
     )
     .bind(limit)
     .fetch_all(pool)
-    .await
+    .await?;
+
+    Ok(res)
 }
 
-pub async fn get_files_by_ids(pool: &DbPool, ids: Vec<i64>) -> Result<Vec<FileMetadata>, sqlx::Error> {
+pub async fn get_files_by_ids(pool: &DbPool, ids: Vec<i64>) -> Result<Vec<FileMetadata>> {
     if ids.is_empty() {
         return Ok(vec![]);
     }
@@ -61,13 +63,15 @@ pub async fn get_files_by_ids(pool: &DbPool, ids: Vec<i64>) -> Result<Vec<FileMe
 
     let query = query_builder.build_query_as::<FileMetadata>();
 
-    query.fetch_all(pool).await
+    let res = query.fetch_all(pool).await?;
+
+    Ok(res)
 }
 
-pub async fn get_all_files(pool: &DbPool) -> Result<Vec<FileMetadata>, sqlx::Error> {
-    sqlx::query_as::<_, FileMetadata>(
-        "SELECT * FROM files_metadata"
-    )
-    .fetch_all(pool)
-    .await
+pub async fn get_all_files(pool: &DbPool) -> Result<Vec<FileMetadata>> {
+    let res = sqlx::query_as::<_, FileMetadata>("SELECT * FROM files_metadata")
+        .fetch_all(pool)
+        .await?;
+
+    Ok(res)
 }

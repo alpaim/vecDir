@@ -1,9 +1,10 @@
+use anyhow::{Result, Ok};
 use sqlx::{Pool, Sqlite, types::Json};
 use super::models::AppConfig;
 
 const CONFIG_KEY: &str = "main";
 
-pub async fn get_config(pool: &Pool<Sqlite>) -> Result<AppConfig, sqlx::Error> {
+pub async fn get_config(pool: &Pool<Sqlite>) -> Result<AppConfig> {
     let record = sqlx::query!(
         "SELECT config as \"config: Json<AppConfig>\" FROM app_config WHERE key = ?",
         CONFIG_KEY
@@ -18,7 +19,7 @@ pub async fn get_config(pool: &Pool<Sqlite>) -> Result<AppConfig, sqlx::Error> {
     }
 }
 
-pub async fn update_config(pool: &Pool<Sqlite>, new_config: AppConfig) -> Result<(), sqlx::Error> {
+pub async fn update_config(pool: &Pool<Sqlite>, new_config: AppConfig) -> Result<()> {
     let config_json = Json(new_config);
 
     // UPSERT: If it exists - update, if not - create 
