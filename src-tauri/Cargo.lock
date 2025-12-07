@@ -5139,6 +5139,7 @@ dependencies = [
  "tauri-plugin-opener",
  "tokio",
  "usearch",
+ "walkdir",
 ]
 
 [[package]]

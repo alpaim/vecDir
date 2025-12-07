@@ -3,6 +3,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use crate::state::AppState;
 
 mod state;
+mod indexer;
 mod database;
 mod vector_store;
 
