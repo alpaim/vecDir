@@ -86,6 +86,17 @@ pub async fn upsert_files_batch(pool: &DbPool, files: UpsertFilesBatch) -> Resul
     Ok(())
 }
 
+pub async fn mark_file_as_indexed(pool: &DbPool, file_id: i64) -> Result<()> {
+    sqlx::query!(
+        "UPDATE files_metadata SET indexing_status = 'indexed', last_indexed_at = CURRENT_TIMESTAMP WHERE id = ?",
+        file_id
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
 pub async fn get_pending_files(pool: &DbPool, limit: i64) -> Result<Vec<FileMetadata>> {
     let res = sqlx::query_as::<_, FileMetadata>(
         "SELECT * FROM files_metadata WHERE indexing_status = 'pending' LIMIT ?",
