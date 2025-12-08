@@ -80,5 +80,5 @@ pub struct FileMetadata {
     pub last_indexed_at: Option<DateTime<Utc>>,
     pub content_hash: Option<String>,
     pub indexing_status: String,
-    pub error_message: Option<String>,
+    pub indexing_error_message: Option<String>,
 }
