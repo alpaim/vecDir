@@ -6,6 +6,7 @@ mod state;
 mod indexer;
 mod database;
 mod vector_store;
+mod ai;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 // This function/command checks if app state is ready
