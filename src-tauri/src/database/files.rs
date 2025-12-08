@@ -15,10 +15,7 @@ pub struct UpsertFile {
 
 pub type UpsertFilesBatch = Vec<UpsertFile>;
 
-pub async fn upsert_file(
-    pool: &DbPool,
-    file: UpsertFile
-) -> Result<()> {
+pub async fn upsert_file(pool: &DbPool, file: UpsertFile) -> Result<()> {
     // If the file already exists, updating its status to "pending";
     // ONLY if date of modification changes!
     sqlx::query!(
@@ -44,7 +41,49 @@ pub async fn upsert_file(
 }
 
 pub async fn upsert_files_batch(pool: &DbPool, files: UpsertFilesBatch) -> Result<()> {
-    todo!()
+    const BATCH_SIZE: usize = 500;
+
+    for chunk in files.chunks(BATCH_SIZE) {
+        let mut query_builder = QueryBuilder::new(
+            "INSERT INTO files_metadata (
+                root_id, 
+                absolute_path, 
+                filename, 
+                file_extension, 
+                file_size, 
+                modified_at_fs, 
+                indexing_status
+            ) "
+        );
+
+        // adds VALUES to query by default 
+        query_builder.push_values(chunk, |mut b, file| {
+            b.push_bind(&file.root_id);
+            b.push_bind(&file.path);
+            b.push_bind(&file.filename);
+            b.push_bind(&file.file_extension);
+            b.push_bind(&file.size);
+            b.push_bind(&file.modified);
+            b.push_bind("pending"); 
+        });
+
+        // upsert logic on conflict in raw SQL
+        query_builder.push(
+            " ON CONFLICT(root_id, absolute_path) DO UPDATE SET 
+                file_size = excluded.file_size,
+                modified_at_fs = excluded.modified_at_fs,
+                indexing_status = CASE 
+                    WHEN files_metadata.modified_at_fs != excluded.modified_at_fs THEN 'pending'
+                    ELSE files_metadata.indexing_status
+                END"
+        );
+        
+        let query = query_builder.build();
+        query.execute(pool).await?;
+    }
+
+
+    Ok(())
 }
 
 pub async fn get_pending_files(pool: &DbPool, limit: i64) -> Result<Vec<FileMetadata>> {
