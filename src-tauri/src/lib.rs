@@ -1,10 +1,12 @@
+use anyhow::Context;
 use tauri::{AppHandle, Emitter, Manager};
 
-use crate::state::AppState;
+use crate::{ai::AI, state::AppState};
 
-mod state;
-mod indexer;
+mod ai;
 mod database;
+mod indexer;
+mod state;
 mod vector_store;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -20,13 +22,21 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let app_handle = app.handle().clone();
-            let app_dir = app_handle.path().app_data_dir().expect("failed to get app data dir");
+            let app_dir = app_handle
+                .path()
+                .app_data_dir()
+                .expect("failed to get app data dir");
 
             tauri::async_runtime::spawn(async move {
-                let sqlx_pool = database::init::initialize_database(&app_dir).await
+                let sqlx_pool = database::init::initialize_database(&app_dir)
+                    .await
                     .expect("failed to initialize database");
 
-                let state = AppState::new(sqlx_pool, app_dir);
+                // TODO: add handling of ai config
+                let openai_client = AI::new("http://127.0.0.1:1234", "lmstudio")
+                    .context("failed to create openai client")?;
+
+                let state = AppState::new(sqlx_pool, app_dir, openai_client);
                 app_handle.manage(state);
 
                 // emitting event to frontend telling backend is ready
