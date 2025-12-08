@@ -28,3 +28,5 @@ tokio = { version = "1.48.0", features = ["full"] }
 chrono = { version = "0.4.42", features = ["serde"] }
 usearch = "2.21.4"
 anyhow = "1.0.100"
+ignore = "0.4.25"
+dashmap = "6.1.0"

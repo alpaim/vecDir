@@ -1,8 +1,9 @@
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, Manager};
 
 use crate::state::AppState;
 
 mod state;
+mod indexer;
 mod database;
 mod vector_store;
 
