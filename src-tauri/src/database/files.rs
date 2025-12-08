@@ -1,6 +1,6 @@
 use crate::database::models::FileMetadata;
 use crate::database::DbPool;
-use anyhow::{Ok, Result};
+use anyhow::{Context, Ok, Result};
 use chrono::{DateTime, Utc};
 use sqlx::{self, QueryBuilder};
 
@@ -53,10 +53,10 @@ pub async fn upsert_files_batch(pool: &DbPool, files: UpsertFilesBatch) -> Resul
                 file_size, 
                 modified_at_fs, 
                 indexing_status
-            ) "
+            ) ",
         );
 
-        // adds VALUES to query by default 
+        // adds VALUES to query by default
         query_builder.push_values(chunk, |mut b, file| {
             b.push_bind(&file.root_id);
             b.push_bind(&file.path);
@@ -64,7 +64,7 @@ pub async fn upsert_files_batch(pool: &DbPool, files: UpsertFilesBatch) -> Resul
             b.push_bind(&file.file_extension);
             b.push_bind(&file.size);
             b.push_bind(&file.modified);
-            b.push_bind("pending"); 
+            b.push_bind("pending");
         });
 
         // upsert logic on conflict in raw SQL
@@ -75,13 +75,12 @@ pub async fn upsert_files_batch(pool: &DbPool, files: UpsertFilesBatch) -> Resul
                 indexing_status = CASE 
                     WHEN files_metadata.modified_at_fs != excluded.modified_at_fs THEN 'pending'
                     ELSE files_metadata.indexing_status
-                END"
+                END",
         );
-        
+
         let query = query_builder.build();
         query.execute(pool).await?;
     }
-
 
     Ok(())
 }
@@ -97,13 +96,37 @@ pub async fn mark_file_as_indexed(pool: &DbPool, file_id: i64) -> Result<()> {
     Ok(())
 }
 
-pub async fn get_pending_files(pool: &DbPool, limit: i64) -> Result<Vec<FileMetadata>> {
+pub async fn get_all_pending_files(pool: &DbPool, limit: i64) -> Result<Vec<FileMetadata>> {
     let res = sqlx::query_as::<_, FileMetadata>(
         "SELECT * FROM files_metadata WHERE indexing_status = 'pending' LIMIT ?",
     )
     .bind(limit)
     .fetch_all(pool)
     .await?;
+
+    Ok(res)
+}
+
+pub async fn get_pending_files_for_space(
+    pool: &DbPool,
+    space_id: i64,
+    limit: i64,
+) -> Result<Vec<FileMetadata>> {
+    // TODO: IMPORTANT! make it type safe
+    let res = sqlx::query_as::<_, FileMetadata>(
+        r#"
+        SELECT f.* FROM files_metadata f
+        JOIN indexed_roots r ON f.root_id = r.id
+        WHERE r.space_id = ? 
+          AND f.indexing_status = 'pending'
+        LIMIT ?
+        "#,
+    )
+    .bind(space_id)
+    .bind(limit)
+    .fetch_all(pool)
+    .await
+    .context("failed to get pending files for space")?;
 
     Ok(res)
 }
