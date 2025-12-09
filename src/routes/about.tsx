@@ -1,5 +1,5 @@
 import { createRoute } from "@tanstack/react-router";
-import { rootRoute } from "@/routes/_root";
+import { rootRoute } from "@/routes/__root";
 
 function About() {
     return <div className="p-2">Hello from About!</div>;
