@@ -13,6 +13,7 @@
     },
     "dependencies": {
         "@tanstack/react-router": "^1.140.0",
+        "@tanstack/react-router-devtools": "^1.140.0",
         "@tanstack/router-plugin": "^1.140.0",
         "@tauri-apps/api": "^2",
         "@tauri-apps/plugin-opener": "^2",
