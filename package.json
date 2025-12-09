@@ -12,13 +12,15 @@
         "lint:fix": "eslint --fix"
     },
     "dependencies": {
+        "@tailwindcss/vite": "^4.1.17",
         "@tanstack/react-router": "^1.140.0",
         "@tanstack/react-router-devtools": "^1.140.0",
         "@tanstack/router-plugin": "^1.140.0",
         "@tauri-apps/api": "^2",
         "@tauri-apps/plugin-opener": "^2",
         "react": "^19.1.0",
-        "react-dom": "^19.1.0"
+        "react-dom": "^19.1.0",
+        "tailwindcss": "^4.1.17"
     },
     "devDependencies": {
         "@antfu/eslint-config": "^6.4.2",
