@@ -1,9 +1,9 @@
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
-import { indexRoute } from "@/routes";
-import { rootRoute } from "@/routes/__root";
 import { aboutRoute } from "@/routes/about";
+import { indexRoute } from "@/routes/index";
+import { rootRoute } from "@/routes/root";
 
 import "@/index.css";
 
