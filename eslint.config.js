@@ -14,4 +14,8 @@ export default antfu({
     rules: {
         "node/prefer-global/process": "off",
     },
+    ignores: [
+        // https://tanstack.com/router/latest/docs/framework/react/installation/with-vite#ignoring-the-generated-route-tree-file
+        "**/routeTree.gen.ts",
+    ],
 });
