@@ -5,6 +5,8 @@ import { indexRoute } from "@/routes";
 import { rootRoute } from "@/routes/_root";
 import { aboutRoute } from "@/routes/about";
 
+import "@/index.css";
+
 const routeTree = rootRoute.addChildren([indexRoute, aboutRoute]);
 
 const router = createRouter({ routeTree });
