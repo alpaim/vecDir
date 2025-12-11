@@ -1,17 +1,8 @@
 import { createRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { Search } from "@/components/search/search";
 import { Input } from "@/components/ui/input";
 import { rootRoute } from "@/routes/root";
-
-function SearchResult({ searchQuery}: { searchQuery: string }) {
-    return (
-        <div>
-            Your query:
-            {" "}
-            {searchQuery}
-        </div>
-    );
-}
 
 function Logo() {
     return (
@@ -31,7 +22,7 @@ function Index() {
             </div>
             <div className="flex">
                 {
-                    (searchQeury !== undefined && searchQeury !== "") ? <SearchResult searchQuery={searchQeury} /> : <Logo />
+                    (searchQeury !== undefined && searchQeury !== "") ? <Search searchQuery={searchQeury} /> : <Logo />
                 }
             </div>
         </div>
