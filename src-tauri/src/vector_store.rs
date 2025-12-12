@@ -6,7 +6,7 @@ pub mod init;
 pub mod manager;
 
 pub struct VectorStore {
-    pub space_id: i64,
+    pub space_id: i32,
     pub index: Index,
     pub path: PathBuf
 }

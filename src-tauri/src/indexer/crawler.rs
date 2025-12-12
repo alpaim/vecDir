@@ -10,7 +10,7 @@ use ignore::WalkBuilder;
 
 // TODO: optimize this function. consider using tokio channels https://docs.rs/tokio/latest/tokio/sync/mpsc/fn.channel.html
 
-pub async fn scan_root(pool: &DbPool, root_id: i64, root_path: &PathBuf) -> Result<()> {
+pub async fn scan_root(pool: &DbPool, root_id: i32, root_path: &PathBuf) -> Result<()> {
     let mut files: UpsertFilesBatch = Vec::new();
 
     let walker = WalkBuilder::new(root_path)
@@ -38,7 +38,7 @@ pub async fn scan_root(pool: &DbPool, root_id: i64, root_path: &PathBuf) -> Resu
         let metadata = entry.metadata().context("failed to read file metadata")?;
 
         let path_string = path.to_string_lossy().to_string();
-        let file_size = metadata.len() as i64;
+        let file_size = metadata.len() as u32;
 
         let modification_time = metadata
             .modified()

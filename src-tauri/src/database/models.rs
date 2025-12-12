@@ -52,7 +52,8 @@ pub struct EmbeddingConfig {
 
 #[derive(Debug, FromRow, Serialize, Type)]
 pub struct Space {
-    pub id: i64,
+    pub id: i32,
+
     pub name: String,
     pub description: Option<String>,
 
@@ -66,8 +67,8 @@ pub struct Space {
 
 #[derive(Debug, FromRow, Serialize, Type)]
 pub struct IndexedRoot {
-    pub id: i64,
-    pub space_id: i64,
+    pub id: i32,
+    pub space_id: i32,
     pub path: String,
     pub status: String, // "active", "paused"
 }
@@ -76,12 +77,16 @@ pub struct IndexedRoot {
 
 #[derive(Debug, FromRow, Serialize, Type)]
 pub struct FileMetadata {
-    pub id: i64,
-    pub root_id: i64,
+    pub id: i32,
+    pub root_id: i32,
+
     pub absolute_path: String,
     pub filename: String,
     pub file_extension: Option<String>,
-    pub file_size: i64,
+
+    #[specta(type = i32)]
+    pub file_size: u32,
+
     pub modified_at_fs: DateTime<Utc>,
     pub last_indexed_at: Option<DateTime<Utc>>,
     pub content_hash: Option<String>,
