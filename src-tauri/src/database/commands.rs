@@ -5,7 +5,7 @@ use tokio::sync::Mutex;
 use crate::{
     database::{
         self,
-        models::{AppConfig, EmbeddingConfig, FileMetadata, LLMConfig, Space},
+        models::{AppConfig, EmbeddingConfig, FileMetadata, IndexedRoot, LLMConfig, Space},
     },
     state::AppState,
 };
@@ -99,6 +99,19 @@ pub async fn add_root(
         .unwrap();
 
     Ok(root)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_roots_by_space_id(state: State<'_, Mutex<AppState>>, space_id: i32) -> Result<Vec<IndexedRoot>, ()> {
+    let state: tokio::sync::MutexGuard<'_, AppState> = state.lock().await;
+
+    let roots = database::spaces::get_roots_by_space_id(&state.db, space_id)
+        .await
+        .context("failed to get roots by space_id in command")
+        .unwrap();
+
+    Ok(roots)
 }
 
 // FILES

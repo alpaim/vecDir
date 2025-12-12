@@ -4,4 +4,6 @@ pub mod config;
 pub mod spaces;
 pub mod files;
 
+pub mod commands;
+
 pub type DbPool = sqlx::Pool<sqlx::Sqlite>;
