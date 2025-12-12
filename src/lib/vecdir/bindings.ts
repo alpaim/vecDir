@@ -7,6 +7,54 @@
 export const commands = {
 async checkIsStateReady() : Promise<boolean> {
     return await TAURI_INVOKE("check_is_state_ready");
+},
+async getConfig() : Promise<Result<AppConfig, null>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_config") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async updateConfig(config: AppConfig) : Promise<Result<null, null>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_config", { config }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async createSpace(name: string, llmConfig: LLMConfig, embeddingConfig: EmbeddingConfig) : Promise<Result<number, null>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("create_space", { name, llmConfig, embeddingConfig }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getAllSpaces() : Promise<Result<Space[], null>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_all_spaces") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async addRoot(spaceId: number, path: string) : Promise<Result<number, null>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_root", { spaceId, path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getFilesByIds(ids: number[]) : Promise<Result<FileMetadata[], null>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_files_by_ids", { ids }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -20,7 +68,11 @@ async checkIsStateReady() : Promise<boolean> {
 
 /** user-defined types **/
 
-
+export type AppConfig = { theme?: string; indexer_parallelism?: number; default_openai_url: string | null }
+export type EmbeddingConfig = { open_ai_base_url: string; model: string; dimensions: number }
+export type FileMetadata = { id: number; root_id: number; absolute_path: string; filename: string; file_extension: string | null; file_size: number; modified_at_fs: string; last_indexed_at: string | null; content_hash: string | null; indexing_status: string; indexing_error_message: string | null }
+export type LLMConfig = { open_ai_base_url: string; model: string }
+export type Space = { id: number; name: string; description: string | null; embedding_config: EmbeddingConfig; created_at: string }
 
 /** tauri-specta globals **/
 
