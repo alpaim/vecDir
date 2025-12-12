@@ -1,5 +1,8 @@
 use anyhow::Context;
+use specta_typescript::Typescript;
 use tauri::{AppHandle, Emitter, Manager};
+
+use tauri_specta::{collect_commands, Builder};
 
 use crate::{ai::AI, state::AppState};
 
@@ -12,15 +15,26 @@ mod vector_store;
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 // This function/command checks if app state is ready
 #[tauri::command]
+#[specta::specta]
 fn check_is_state_ready(app: AppHandle) -> bool {
     app.try_state::<AppState>().is_some()
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let builder = Builder::<tauri::Wry>::new().commands(collect_commands![check_is_state_ready,]);
+
+    #[cfg(debug_assertions)] // <- Only export on non-release builds
+    builder
+        .export(Typescript::default(), "../src/lib/vecdir/bindings.ts")
+        .expect("Failed to export typescript bindings");
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .setup(|app| {
+        .invoke_handler(builder.invoke_handler())
+        .setup(move |app| {
+            builder.mount_events(app);
+
             let app_handle = app.handle().clone();
             let app_dir = app_handle
                 .path()
@@ -45,7 +59,6 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![check_is_state_ready])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
