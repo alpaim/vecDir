@@ -32,6 +32,14 @@ async createSpace(name: string, llmConfig: LLMConfig, embeddingConfig: Embedding
     else return { status: "error", error: e  as any };
 }
 },
+async getSpaceById(spaceId: number) : Promise<Result<Space, null>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_space_by_id", { spaceId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getAllSpaces() : Promise<Result<Space[], null>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_all_spaces") };
@@ -48,9 +56,25 @@ async addRoot(spaceId: number, path: string) : Promise<Result<number, null>> {
     else return { status: "error", error: e  as any };
 }
 },
+async getRootsBySpaceId(spaceId: number) : Promise<Result<IndexedRoot[], null>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_roots_by_space_id", { spaceId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getFilesByIds(ids: number[]) : Promise<Result<FileMetadata[], null>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_files_by_ids", { ids }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async indexSpace(spaceId: number) : Promise<Result<boolean, null>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("index_space", { spaceId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -71,6 +95,7 @@ async getFilesByIds(ids: number[]) : Promise<Result<FileMetadata[], null>> {
 export type AppConfig = { theme?: string; indexer_parallelism?: number; default_openai_url: string | null }
 export type EmbeddingConfig = { open_ai_base_url: string; model: string; dimensions: number }
 export type FileMetadata = { id: number; root_id: number; absolute_path: string; filename: string; file_extension: string | null; file_size: number; modified_at_fs: string; last_indexed_at: string | null; content_hash: string | null; indexing_status: string; indexing_error_message: string | null }
+export type IndexedRoot = { id: number; space_id: number; path: string; status: string }
 export type LLMConfig = { open_ai_base_url: string; model: string }
 export type Space = { id: number; name: string; description: string | null; embedding_config: EmbeddingConfig; created_at: string }
 

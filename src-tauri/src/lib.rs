@@ -34,6 +34,9 @@ pub fn run() {
         database::commands::add_root,
         database::commands::get_roots_by_space_id,
         database::commands::get_files_by_ids,
+
+        // INDEXER
+        indexer::commands::index_space,
         ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
