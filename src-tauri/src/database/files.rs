@@ -5,11 +5,11 @@ use chrono::{DateTime, Utc};
 use sqlx::{self, QueryBuilder};
 
 pub struct UpsertFile {
-    pub root_id: i64,
+    pub root_id: i32,
     pub path: String,
     pub filename: String,
     pub file_extension: String,
-    pub size: i64,
+    pub size: u32,
     pub modified: DateTime<Utc>,
 }
 
@@ -85,7 +85,7 @@ pub async fn upsert_files_batch(pool: &DbPool, files: UpsertFilesBatch) -> Resul
     Ok(())
 }
 
-pub async fn mark_file_as_indexed(pool: &DbPool, file_id: i64) -> Result<()> {
+pub async fn mark_file_as_indexed(pool: &DbPool, file_id: i32) -> Result<()> {
     sqlx::query!(
         "UPDATE files_metadata SET indexing_status = 'indexed', last_indexed_at = CURRENT_TIMESTAMP WHERE id = ?",
         file_id
@@ -96,7 +96,7 @@ pub async fn mark_file_as_indexed(pool: &DbPool, file_id: i64) -> Result<()> {
     Ok(())
 }
 
-pub async fn get_all_pending_files(pool: &DbPool, limit: i64) -> Result<Vec<FileMetadata>> {
+pub async fn get_all_pending_files(pool: &DbPool, limit: i32) -> Result<Vec<FileMetadata>> {
     let res = sqlx::query_as::<_, FileMetadata>(
         "SELECT * FROM files_metadata WHERE indexing_status = 'pending' LIMIT ?",
     )
@@ -109,8 +109,8 @@ pub async fn get_all_pending_files(pool: &DbPool, limit: i64) -> Result<Vec<File
 
 pub async fn get_pending_files_for_space(
     pool: &DbPool,
-    space_id: i64,
-    limit: i64,
+    space_id: i32,
+    limit: i32,
 ) -> Result<Vec<FileMetadata>> {
     // TODO: IMPORTANT! make it type safe
     let res = sqlx::query_as::<_, FileMetadata>(
@@ -131,7 +131,7 @@ pub async fn get_pending_files_for_space(
     Ok(res)
 }
 
-pub async fn get_files_by_ids(pool: &DbPool, ids: Vec<i64>) -> Result<Vec<FileMetadata>> {
+pub async fn get_files_by_ids(pool: &DbPool, ids: Vec<i32>) -> Result<Vec<FileMetadata>> {
     if ids.is_empty() {
         return Ok(vec![]);
     }

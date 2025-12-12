@@ -7,7 +7,7 @@ use crate::vector_store::VectorStore;
 
 // TODO: IMPORTANT! need to handle mutable nature of self in CPP usearch calls!
 impl VectorStore {
-    pub fn init(app_dir: &Path, space_id: i64, options: IndexOptions) -> Result<Self> {
+    pub fn init(app_dir: &Path, space_id: i32, options: IndexOptions) -> Result<Self> {
         let spaces_dir = app_dir.join("spaces");
 
         if !spaces_dir.exists() {

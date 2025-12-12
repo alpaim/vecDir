@@ -22,7 +22,22 @@ fn check_is_state_ready(app: AppHandle) -> bool {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = Builder::<tauri::Wry>::new().commands(collect_commands![check_is_state_ready,]);
+    let builder = Builder::<tauri::Wry>::new().commands(collect_commands![
+        check_is_state_ready,
+        
+        // DATABASE
+        database::commands::get_config,
+        database::commands::update_config,
+        database::commands::create_space,
+        database::commands::get_space_by_id,
+        database::commands::get_all_spaces,
+        database::commands::add_root,
+        database::commands::get_roots_by_space_id,
+        database::commands::get_files_by_ids,
+
+        // INDEXER
+        indexer::commands::index_space,
+        ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
     builder

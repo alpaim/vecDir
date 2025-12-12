@@ -10,7 +10,7 @@ use usearch::IndexOptions;
 use crate::vector_store::VectorStore;
 
 pub type VectorStoreArcMutex = Arc<Mutex<VectorStore>>;
-pub type IndiciesMapMutex = DashMap<i64, VectorStoreArcMutex>;
+pub type IndiciesMapMutex = DashMap<i32, VectorStoreArcMutex>;
 
 pub struct VectorIndexManager {
     indices: IndiciesMapMutex,
@@ -25,7 +25,7 @@ impl VectorIndexManager {
         }
     }
 
-    pub fn get_index(&self, space_id: i64) -> Result<VectorStoreArcMutex> {
+    pub fn get_index(&self, space_id: i32) -> Result<VectorStoreArcMutex> {
         match self.indices.entry(space_id) {
             Entry::Occupied(entry) => Ok(entry.get().clone()),
             Entry::Vacant(entry) => {
