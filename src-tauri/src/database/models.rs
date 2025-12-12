@@ -1,10 +1,12 @@
+use specta::Type;
+
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use chrono::{DateTime, Utc};
 use sqlx::types::Json;
 
 // APP CONFIG
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct AppConfig {
     // UI
     #[serde(default = "default_theme")]
@@ -12,6 +14,7 @@ pub struct AppConfig {
 
     // Indexer Settings
     #[serde(default = "default_parallelism")]
+    #[specta(type = i32)]
     pub indexer_parallelism: usize, // How many files vecDir needs to index in parallel (2-4)
     
     // AI Settings (Global defaults)
@@ -34,31 +37,34 @@ impl Default for AppConfig {
 
 // SPACES
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct LLMConfig {
     pub open_ai_base_url: String,
     pub model: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct EmbeddingConfig {
     pub open_ai_base_url: String,
     pub model: String,
     pub dimensions: i32,
 }
 
-#[derive(Debug, FromRow, Serialize)]
+#[derive(Debug, FromRow, Serialize, Type)]
 pub struct Space {
     pub id: i64,
     pub name: String,
     pub description: Option<String>,
+
+    #[specta(type = EmbeddingConfig)]
     pub embedding_config: Json<EmbeddingConfig>, 
+    
     pub created_at: DateTime<Utc>,
 }
 
 // ROOTS
 
-#[derive(Debug, FromRow, Serialize)]
+#[derive(Debug, FromRow, Serialize, Type)]
 pub struct IndexedRoot {
     pub id: i64,
     pub space_id: i64,
@@ -68,7 +74,7 @@ pub struct IndexedRoot {
 
 // FILES
 
-#[derive(Debug, FromRow, Serialize)]
+#[derive(Debug, FromRow, Serialize, Type)]
 pub struct FileMetadata {
     pub id: i64,
     pub root_id: i64,
