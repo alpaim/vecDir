@@ -60,6 +60,19 @@ pub async fn create_space(
 
 #[tauri::command]
 #[specta::specta]
+pub async fn get_space_by_id(state: State<'_, Mutex<AppState>>, space_id: i32) -> Result<Space, ()> {
+    let state: tokio::sync::MutexGuard<'_, AppState> = state.lock().await;
+
+    let spaces = database::spaces::get_space_by_id(&state.db, space_id)
+        .await
+        .context("failed to get space by id in command")
+        .unwrap();
+
+    Ok(spaces)
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn get_all_spaces(state: State<'_, Mutex<AppState>>) -> Result<Vec<Space>, ()> {
     let state: tokio::sync::MutexGuard<'_, AppState> = state.lock().await;
 

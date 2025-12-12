@@ -29,6 +29,15 @@ pub async fn create_space(
     Ok(record.id as i32)
 }
 
+pub async fn get_space_by_id(pool: &DbPool, space_id: i32) -> Result<Space> {
+    let res = sqlx::query_as::<_, Space>("SELECT * FROM spaces WHERE id = ?")
+        .bind(space_id)
+        .fetch_one(pool)
+        .await?;
+
+    Ok(res)
+}
+
 pub async fn get_all_spaces(pool: &DbPool) -> Result<Vec<Space>> {
     let res = sqlx::query_as::<_, Space>("SELECT * FROM spaces ORDER BY id DESC")
         .fetch_all(pool)
