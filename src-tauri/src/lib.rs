@@ -1,13 +1,14 @@
 use anyhow::Context;
 use specta_typescript::Typescript;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 
-use tauri_specta::{collect_commands, Builder};
+use tauri_specta::{collect_commands, collect_events, Builder, Event};
 
 use crate::{ai::AI, state::AppState};
 
 mod ai;
 mod database;
+mod events;
 mod indexer;
 mod state;
 mod vector_store;
@@ -22,22 +23,22 @@ fn check_is_state_ready(app: AppHandle) -> bool {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = Builder::<tauri::Wry>::new().commands(collect_commands![
-        check_is_state_ready,
-        
-        // DATABASE
-        database::commands::get_config,
-        database::commands::update_config,
-        database::commands::create_space,
-        database::commands::get_space_by_id,
-        database::commands::get_all_spaces,
-        database::commands::add_root,
-        database::commands::get_roots_by_space_id,
-        database::commands::get_files_by_ids,
-
-        // INDEXER
-        indexer::commands::index_space,
-        ]);
+    let builder = Builder::<tauri::Wry>::new()
+        .commands(collect_commands![
+            check_is_state_ready,
+            // DATABASE
+            database::commands::get_config,
+            database::commands::update_config,
+            database::commands::create_space,
+            database::commands::get_space_by_id,
+            database::commands::get_all_spaces,
+            database::commands::add_root,
+            database::commands::get_roots_by_space_id,
+            database::commands::get_files_by_ids,
+            // INDEXER
+            indexer::commands::index_space,
+        ])
+        .events(collect_events![events::BackendReadyEvent,]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
     builder
@@ -69,7 +70,7 @@ pub fn run() {
                 app_handle.manage(state);
 
                 // emitting event to frontend telling backend is ready
-                app_handle.emit("backend-is-ready", ())
+                events::BackendReadyEvent.emit(&app_handle)
             });
 
             Ok(())
