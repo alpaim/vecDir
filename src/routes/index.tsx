@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Search } from "@/components/search/search";
 import { Input } from "@/components/ui/input";
 import { rootRoute } from "@/routes/root";
+import { useAppState } from "@/store/store";
 
 function Logo() {
     return (
@@ -12,7 +13,16 @@ function Logo() {
     );
 }
 
+function Initializing() {
+    return (
+        <div>
+            <h3 className="font-mono text-2xl font-extrabold">Initialzing</h3>
+        </div>
+    );
+}
+
 function Index() {
+    const store = useAppState();
     const [searchQeury, setSearchQuery] = useState<string | undefined>();
 
     return (
@@ -22,7 +32,14 @@ function Index() {
             </div>
             <div className="flex">
                 {
-                    (searchQeury !== undefined && searchQeury !== "") ? <Search searchQuery={searchQeury} /> : <Logo />
+
+                }
+                {
+                    store.isBackendReady
+                        ? (
+                                (searchQeury !== undefined && searchQeury !== "") ? <Search searchQuery={searchQeury} /> : <Logo />
+                            )
+                        : <Initializing />
                 }
             </div>
         </div>
