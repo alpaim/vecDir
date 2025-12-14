@@ -5729,9 +5729,11 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-openai",
+ "base64 0.22.1",
  "chrono",
  "dashmap",
  "ignore",
+ "mime_guess",
  "serde",
  "serde_json",
  "specta",

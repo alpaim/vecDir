@@ -30,7 +30,9 @@ usearch = "2.21.4"
 anyhow = "1.0.100"
 ignore = "0.4.25"
 dashmap = "6.1.0"
-async-openai = { version = "0.31.1", features = ["responses", "embedding"] }
+async-openai = { version = "0.31.1", features = ["responses", "embedding", "chat-completion", "chat-completion-types"] }
 specta = { version = "=2.0.0-rc.22", features = ["derive", "chrono", "serde"] }
 specta-typescript = "0.0.9"
 tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
+base64 = "0.22.1"
+mime_guess = "2.0.5"
