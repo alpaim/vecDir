@@ -1,25 +1,10 @@
 import { createRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Search } from "@/components/search/search";
+import { Initializing } from "@/components/index/initializing";
+import { Main } from "@/components/index/main";
 import { Input } from "@/components/ui/input";
 import { rootRoute } from "@/routes/root";
 import { useAppState } from "@/store/store";
-
-function Logo() {
-    return (
-        <div>
-            <h3 className="font-mono text-2xl font-extrabold">VecDir</h3>
-        </div>
-    );
-}
-
-function Initializing() {
-    return (
-        <div>
-            <h3 className="font-mono text-2xl font-extrabold">Initialzing</h3>
-        </div>
-    );
-}
 
 function Index() {
     const store = useAppState();
@@ -30,16 +15,9 @@ function Index() {
             <div className="absolute top-5 left-0 w-full px-5">
                 <Input placeholder="Search..." className="font-mono" onChange={e => setSearchQuery(e.target.value)} value={searchQeury} />
             </div>
-            <div className="flex">
+            <div className="flex w-full">
                 {
-
-                }
-                {
-                    store.isBackendReady
-                        ? (
-                                (searchQeury !== undefined && searchQeury !== "") ? <Search searchQuery={searchQeury} /> : <Logo />
-                            )
-                        : <Initializing />
+                    store.isBackendReady ? <Main searchQuery={searchQeury} /> : <Initializing />
                 }
             </div>
         </div>
