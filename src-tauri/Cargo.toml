@@ -37,3 +37,4 @@ tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
 base64 = "0.22.1"
 mime_guess = "2.0.5"
 tauri-plugin-store = "2.4.1"
+tauri-plugin-dialog = "2.4.2"
