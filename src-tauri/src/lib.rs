@@ -47,6 +47,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_store::Builder::new().build())
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
@@ -61,11 +62,11 @@ pub fn run() {
                 let sqlx_pool = database::init::initialize_database(&app_dir)
                     .await
                     .expect("failed to initialize database");
-
+                
                 // TODO: add handling of ai config
                 let openai_client = AI::new("http://127.0.0.1:1234", "lmstudio")
                     .context("failed to create openai client")?;
-
+                
                 let state = AppState::new(sqlx_pool, app_dir, openai_client);
                 app_handle.manage(state);
 
