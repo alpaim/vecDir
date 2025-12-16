@@ -16,9 +16,15 @@ impl VectorStore {
 
         let index_path = spaces_dir.join(format!("space_{}.usearch", space_id));
 
-        let index_path_str = index_path
+        // windows paths fix
+        let index_path_owned = index_path
             .to_str()
-            .ok_or_else(|| anyhow!("invalid path encoding for index path: {:?}", index_path))?;
+            .ok_or_else(|| anyhow!("invalid path encoding for index path: {:?}", index_path))?
+            .replace("/", "\\");
+
+        let index_path_str: &str = &index_path_owned; 
+
+
 
         let index =
             Index::new(&options).map_err(|e| anyhow!("failed to create usearch index: {}", e))?;

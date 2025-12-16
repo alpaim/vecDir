@@ -1,15 +1,16 @@
 use std::{
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::Arc,
 };
 
 use anyhow::{Ok, Result};
 use dashmap::{DashMap, Entry};
+use tokio::sync::Mutex;
 use usearch::IndexOptions;
 
 use crate::vector_store::VectorStore;
-
 pub type VectorStoreArcMutex = Arc<Mutex<VectorStore>>;
+
 pub type IndiciesMapMutex = DashMap<i32, VectorStoreArcMutex>;
 
 pub struct VectorIndexManager {
@@ -29,11 +30,11 @@ impl VectorIndexManager {
         match self.indices.entry(space_id) {
             Entry::Occupied(entry) => Ok(entry.get().clone()),
             Entry::Vacant(entry) => {
-                // Need to make a function to generate index options from space db info
+                // TODO: Need to make a function to generate index options from space db info
                 let options = IndexOptions {
-                    dimensions: 1536,
+                    dimensions: 1024,
                     metric: usearch::MetricKind::Cos,
-                    quantization: usearch::ScalarKind::I8,
+                    quantization: usearch::ScalarKind::F32,
                     connectivity: 16,
                     expansion_add: 128,
                     expansion_search: 64,
