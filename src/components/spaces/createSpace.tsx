@@ -28,8 +28,6 @@ export function CreateSpace() {
                     dimensions: 1024,
                 });
 
-                console.log(space);
-
                 if (space !== undefined) {
                     store.addSpace(space);
                 }

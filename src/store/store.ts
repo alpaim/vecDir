@@ -2,7 +2,9 @@ import type { EmbeddingConfig, LLMConfig, Space } from "@/lib/vecdir/bindings";
 import type { AppConfig } from "@/types/config";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { storage } from "@/store/storage";
+import { fileStore, storage } from "@/store/storage";
+
+const APP_STORAGE_NAME = "app-storage";
 
 interface AppState {
     // Runtime state (not saving)
@@ -23,6 +25,8 @@ interface AppState {
 }
 
 interface PersistedState {
+    version: number | undefined; // zustand persist
+
     config: AppConfig;
     spaces: [number, Space][]; // Serialized Map
     selectedSpace: number;
@@ -79,7 +83,7 @@ export const useAppState = create<AppState>()(
             },
         }),
         {
-            name: "app-storage",
+            name: APP_STORAGE_NAME,
             storage,
 
             // what to save
@@ -94,11 +98,19 @@ export const useAppState = create<AppState>()(
             merge: (persistedState, currentState) => {
                 const typedPersisted = persistedState as PersistedState;
 
+                // fallback on when there are some error on reading file
+                if (!typedPersisted) {
+                    return currentState;
+                }
+
                 return {
                     ...currentState,
                     ...typedPersisted,
 
                     spaces: new Map(typedPersisted.spaces || []), // array -> map
+
+                    // resetting runtime flags
+                    isBackendReady: false,
                 };
             },
         },
