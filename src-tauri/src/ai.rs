@@ -5,8 +5,9 @@ use async_openai::{
     config::OpenAIConfig,
     types::{
         chat::{
-            ChatCompletionRequestMessageContentPartImage,
-            ChatCompletionRequestMessageContentPartText, ChatCompletionRequestUserMessageArgs,
+            ChatCompletionRequestMessage, ChatCompletionRequestMessageContentPartImage,
+            ChatCompletionRequestMessageContentPartText, ChatCompletionRequestSystemMessage,
+            ChatCompletionRequestSystemMessageArgs, ChatCompletionRequestUserMessageArgs,
             CreateChatCompletionRequestArgs, ImageDetail, ImageUrl,
         },
         embeddings::{CreateEmbeddingRequestArgs, CreateEmbeddingResponse},
@@ -19,6 +20,7 @@ use base64::Engine;
 pub mod embedding;
 pub mod llm;
 
+#[derive(Clone)]
 pub struct AI {
     pub client: Client<OpenAIConfig>,
 }
@@ -118,28 +120,43 @@ impl AI {
     pub async fn describe_image_from_file(
         &self,
         file_path: &str,
-        prompt: &str,
-        model: String,
+        system_prompt: &str,
+        user_prompt: &str,
+        model: &str,
     ) -> Result<String> {
         let image_url = self
             .image_to_base64(file_path)
             .await
             .context("failed to get image base64 url")?;
 
+        let mut messages: Vec<ChatCompletionRequestMessage> = Vec::new();
+
+        let system_message = ChatCompletionRequestSystemMessageArgs::default()
+            .content(system_prompt)
+            .build()
+            .context("failed to build system message in describe_image_from_file")?
+            .into();
+
+        messages.push(system_message);
+
+        let user_message = ChatCompletionRequestUserMessageArgs::default()
+            .content(vec![
+                ChatCompletionRequestMessageContentPartText::from(user_prompt).into(),
+                ChatCompletionRequestMessageContentPartImage::from(ImageUrl {
+                    url: image_url,
+                    detail: Some(ImageDetail::Auto),
+                })
+                .into(),
+            ])
+            .build()
+            .context("failed to build user message content")?
+            .into();
+
+        messages.push(user_message);
+
         let request = CreateChatCompletionRequestArgs::default()
             .model(model)
-            .messages([ChatCompletionRequestUserMessageArgs::default()
-                .content(vec![
-                    ChatCompletionRequestMessageContentPartText::from(prompt).into(),
-                    ChatCompletionRequestMessageContentPartImage::from(ImageUrl {
-                        url: image_url,
-                        detail: Some(ImageDetail::Auto),
-                    })
-                    .into(),
-                ])
-                .build()
-                .context("failed to build content content for llm image description request")?
-                .into()])
+            .messages(messages)
             .build()
             .context("failed to build llm request for image description")?;
 

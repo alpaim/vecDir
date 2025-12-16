@@ -39,13 +39,13 @@ impl Default for AppConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct LLMConfig {
-    pub open_ai_base_url: String,
     pub model: String,
+    pub system_prompt: String,
+    pub user_prompt: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct EmbeddingConfig {
-    pub open_ai_base_url: String,
     pub model: String,
     pub dimensions: i32,
 }
@@ -58,8 +58,11 @@ pub struct Space {
     pub description: Option<String>,
 
     #[specta(type = EmbeddingConfig)]
-    pub embedding_config: Json<EmbeddingConfig>, 
-    
+    pub embedding_config: Json<EmbeddingConfig>,
+
+    #[specta(type = LLMConfig)] 
+    pub llm_config: Json<LLMConfig>,
+
     pub created_at: DateTime<Utc>,
 }
 
@@ -86,6 +89,8 @@ pub struct FileMetadata {
 
     #[specta(type = i32)]
     pub file_size: u32,
+
+    pub description: String,
 
     pub modified_at_fs: DateTime<Utc>,
     pub last_indexed_at: Option<DateTime<Utc>>,

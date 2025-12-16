@@ -79,6 +79,14 @@ async indexSpace(spaceId: number) : Promise<Result<boolean, null>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async processSpace(spaceId: number) : Promise<Result<null, null>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("process_space", { spaceId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -99,11 +107,11 @@ backendReadyEvent: "backend-ready-event"
 
 export type AppConfig = { theme?: string; indexer_parallelism?: number; default_openai_url: string | null }
 export type BackendReadyEvent = null
-export type EmbeddingConfig = { open_ai_base_url: string; model: string; dimensions: number }
-export type FileMetadata = { id: number; root_id: number; absolute_path: string; filename: string; file_extension: string | null; file_size: number; modified_at_fs: string; last_indexed_at: string | null; content_hash: string | null; indexing_status: string; indexing_error_message: string | null }
+export type EmbeddingConfig = { model: string; dimensions: number }
+export type FileMetadata = { id: number; root_id: number; absolute_path: string; filename: string; file_extension: string | null; file_size: number; description: string; modified_at_fs: string; last_indexed_at: string | null; content_hash: string | null; indexing_status: string; indexing_error_message: string | null }
 export type IndexedRoot = { id: number; space_id: number; path: string; status: string }
-export type LLMConfig = { open_ai_base_url: string; model: string }
-export type Space = { id: number; name: string; description: string | null; embedding_config: EmbeddingConfig; created_at: string }
+export type LLMConfig = { model: string; system_prompt: string; user_prompt: string }
+export type Space = { id: number; name: string; description: string | null; embedding_config: EmbeddingConfig; llm_config: LLMConfig; created_at: string }
 
 /** tauri-specta globals **/
 
