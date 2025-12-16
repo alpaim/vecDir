@@ -1,6 +1,5 @@
 use anyhow::Context;
 use tauri::State;
-use tokio::sync::Mutex;
 
 use crate::{
     database::{
@@ -14,9 +13,7 @@ use crate::{
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_config(state: State<'_, Mutex<AppState>>) -> Result<AppConfig, ()> {
-    let state = state.lock().await;
-
+pub async fn get_config(state: State<'_, AppState>) -> Result<AppConfig, ()> {
     let config = database::config::get_config(&state.db)
         .await
         .context("failed to get config in command")
@@ -27,9 +24,7 @@ pub async fn get_config(state: State<'_, Mutex<AppState>>) -> Result<AppConfig, 
 
 #[tauri::command]
 #[specta::specta]
-pub async fn update_config(state: State<'_, Mutex<AppState>>, config: AppConfig) -> Result<(), ()> {
-    let state = state.lock().await;
-
+pub async fn update_config(state: State<'_, AppState>, config: AppConfig) -> Result<(), ()> {
     let result = database::config::update_config(&state.db, config)
         .await
         .context("failed to update config in command")
@@ -43,13 +38,11 @@ pub async fn update_config(state: State<'_, Mutex<AppState>>, config: AppConfig)
 #[tauri::command]
 #[specta::specta]
 pub async fn create_space(
-    state: State<'_, Mutex<AppState>>,
+    state: State<'_, AppState>,
     name: &str,
     llm_config: LLMConfig,
     embedding_config: EmbeddingConfig,
 ) -> Result<i32, ()> {
-    let state: tokio::sync::MutexGuard<'_, AppState> = state.lock().await;
-
     let space = database::spaces::create_space(&state.db, name, llm_config, embedding_config)
         .await
         .context("failed to create space in command")
@@ -60,9 +53,7 @@ pub async fn create_space(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_space_by_id(state: State<'_, Mutex<AppState>>, space_id: i32) -> Result<Space, ()> {
-    let state: tokio::sync::MutexGuard<'_, AppState> = state.lock().await;
-
+pub async fn get_space_by_id(state: State<'_, AppState>, space_id: i32) -> Result<Space, ()> {
     let spaces = database::spaces::get_space_by_id(&state.db, space_id)
         .await
         .context("failed to get space by id in command")
@@ -73,9 +64,7 @@ pub async fn get_space_by_id(state: State<'_, Mutex<AppState>>, space_id: i32) -
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_all_spaces(state: State<'_, Mutex<AppState>>) -> Result<Vec<Space>, ()> {
-    let state: tokio::sync::MutexGuard<'_, AppState> = state.lock().await;
-
+pub async fn get_all_spaces(state: State<'_, AppState>) -> Result<Vec<Space>, ()> {
     let spaces = database::spaces::get_all_spaces(&state.db)
         .await
         .context("failed to get all spaces in command")
@@ -87,12 +76,10 @@ pub async fn get_all_spaces(state: State<'_, Mutex<AppState>>) -> Result<Vec<Spa
 #[tauri::command]
 #[specta::specta]
 pub async fn add_root(
-    state: State<'_, Mutex<AppState>>,
+    state: State<'_, AppState>,
     space_id: i32,
     path: &str,
 ) -> Result<i32, ()> {
-    let state: tokio::sync::MutexGuard<'_, AppState> = state.lock().await;
-
     let root = database::spaces::add_root(&state.db, space_id, path)
         .await
         .context("failed to add root to space in command")
@@ -103,9 +90,7 @@ pub async fn add_root(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_roots_by_space_id(state: State<'_, Mutex<AppState>>, space_id: i32) -> Result<Vec<IndexedRoot>, ()> {
-    let state: tokio::sync::MutexGuard<'_, AppState> = state.lock().await;
-
+pub async fn get_roots_by_space_id(state: State<'_, AppState>, space_id: i32) -> Result<Vec<IndexedRoot>, ()> {
     let roots = database::spaces::get_roots_by_space_id(&state.db, space_id)
         .await
         .context("failed to get roots by space_id in command")
@@ -119,11 +104,9 @@ pub async fn get_roots_by_space_id(state: State<'_, Mutex<AppState>>, space_id: 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_files_by_ids(
-    state: State<'_, Mutex<AppState>>,
+    state: State<'_, AppState>,
     ids: Vec<i32>,
 ) -> Result<Vec<FileMetadata>, ()> {
-    let state: tokio::sync::MutexGuard<'_, AppState> = state.lock().await;
-
     let files = database::files::get_files_by_ids(&state.db, ids)
         .await
         .context("failed to get files by ids in command")
