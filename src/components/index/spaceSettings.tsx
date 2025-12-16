@@ -1,8 +1,16 @@
 import { RootsList } from "@/components/index/rootsList";
+import { CreateSpace } from "@/components/spaces/createSpace";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAppState } from "@/store/store";
 
 export function SpaceSettings() {
+    const store = useAppState();
+
+    if (store.spaces.size === 0) {
+        return <CreateSpace />;
+    }
+
     return (
         <div className="flex justify-around w-full">
             <Card className="w-full max-w-3xs">
