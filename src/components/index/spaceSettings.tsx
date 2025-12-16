@@ -5,6 +5,8 @@ import { RootsList } from "@/components/index/rootsList";
 import { CreateSpace } from "@/components/spaces/createSpace";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { processSpace } from "@/lib/vecdir/indexer/processSpace";
+import { indexSpace } from "@/lib/vecdir/indexer/startIndexing";
 import { addRoot } from "@/lib/vecdir/roots/createRoot";
 import { getRootsBySpaceId } from "@/lib/vecdir/roots/getRoot";
 import { useAppState } from "@/store/store";
@@ -74,6 +76,21 @@ export function SpaceSettings() {
                     asdas
                 </CardContent>
             </Card>
+            <div className="flex flex-1">
+                <Button onClick={() => {
+                    indexSpace(store.selectedSpace).then(() => {});
+                }}
+                >
+                    INDEX SPACE
+                </Button>
+                <Button onClick={() => {
+                    processSpace(store.selectedSpace).then(() => {});
+                }}
+                >
+                    PROCESS SPACE
+                </Button>
+            </div>
+
         </div>
     );
 }

@@ -37,6 +37,7 @@ pub fn run() {
             database::commands::get_files_by_ids,
             // INDEXER
             indexer::commands::index_space,
+            indexer::commands::process_space,
         ])
         .events(collect_events![events::BackendReadyEvent,]);
 

@@ -21,10 +21,10 @@ export function CreateSpace() {
             <Button onClick={async () => {
                 const space = await createSpace("default", {
                     model: "mistralai/ministral-3-3b",
-                    open_ai_base_url: "http://127.0.0.1:1234",
+                    system_prompt: "Describe the following image",
+                    user_prompt: "Describe this image",
                 }, {
                     model: "text-embedding-qwen3-embedding-0.6b",
-                    open_ai_base_url: "http://127.0.0.1:1234",
                     dimensions: 1024,
                 });
 
