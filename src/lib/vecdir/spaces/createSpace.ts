@@ -5,8 +5,6 @@ import { getSpaceById } from "@/lib/vecdir/spaces/getSpace";
 export async function createSpace(name: string, llmConfig: LLMConfig, embeddingConfig: EmbeddingConfig): Promise<Space | undefined> {
     const spaceId = await commands.createSpace(name, llmConfig, embeddingConfig);
 
-    console.log(spaceId, "adwad");
-
     if (spaceId.status === "error") {
         return undefined;
     }
