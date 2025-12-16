@@ -38,7 +38,7 @@ export const useAppState = create<AppState>()(
             isBackendReady: false,
 
             spaces: new Map(),
-            selectedSpace: 0,
+            selectedSpace: 1,
             config: { version: "" } as AppConfig,
 
             setBackendStatus: (isReady) => {

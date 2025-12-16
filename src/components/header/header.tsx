@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { Spaces } from "@/components/header/spaces";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarShortcut, MenubarTrigger } from "@/components/ui/menubar";
 
 export function Header() {
@@ -28,6 +29,7 @@ export function Header() {
                         </MenubarItem>
                     </MenubarContent>
                 </MenubarMenu>
+                <Spaces />
                 <MenubarMenu>
                     <MenubarTrigger>Help</MenubarTrigger>
                     <MenubarContent>
