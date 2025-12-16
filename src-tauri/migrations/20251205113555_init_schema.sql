@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS files_metadata (
     
     file_size INTEGER NOT NULL,
     
+    description TEXT,                     -- file description from LLM 
+
     -- Timestamps for incremental indexation
     modified_at_fs DATETIME NOT NULL,     -- Date of last file modification on filesystem  (mtime)
     last_indexed_at DATETIME,             -- Last indexed time. NULL if there were no indexations.
