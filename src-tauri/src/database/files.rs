@@ -18,7 +18,7 @@ pub type UpsertFilesBatch = Vec<UpsertFile>;
 pub async fn upsert_file(pool: &DbPool, file: UpsertFile) -> Result<()> {
     // If the file already exists, updating its status to "pending";
     // ONLY if date of modification changes!
-    sqlx::query!(
+    sqlx::query(
         r#"
         INSERT INTO files_metadata (
             root_id, absolute_path, filename, file_extension, file_size, modified_at_fs, indexing_status
@@ -32,8 +32,13 @@ pub async fn upsert_file(pool: &DbPool, file: UpsertFile) -> Result<()> {
                 ELSE files_metadata.indexing_status
             END
         "#,
-        file.root_id, file.path, file.filename, file.file_extension, file.size, file.modified
     )
+    .bind(file.root_id)
+    .bind(file.path)
+    .bind(file.filename)
+    .bind(file.file_extension)
+    .bind(file.size)
+    .bind(file.modified)
     .execute(pool)
     .await?;
 
@@ -85,13 +90,72 @@ pub async fn upsert_files_batch(pool: &DbPool, files: UpsertFilesBatch) -> Resul
     Ok(())
 }
 
-pub async fn mark_file_as_indexed(pool: &DbPool, file_id: i32) -> Result<()> {
-    sqlx::query!(
-        "UPDATE files_metadata SET indexing_status = 'indexed', last_indexed_at = CURRENT_TIMESTAMP WHERE id = ?",
-        file_id
+pub async fn mark_file_as_indexed(
+    pool: &DbPool,
+    file_id: i32,
+    description: Option<String>,
+) -> Result<()> {
+    sqlx::query(
+        r#"
+        UPDATE files_metadata 
+        SET 
+            indexing_status = 'indexed', 
+            last_indexed_at = CURRENT_TIMESTAMP,
+            description = ?
+        WHERE id = ?
+        "#,
     )
+    .bind(description)
+    .bind(file_id)
     .execute(pool)
     .await?;
+
+    Ok(())
+}
+
+pub struct MarkFileAsIndexed {
+    pub file_id: i32,
+    pub description: Option<String>,
+}
+
+pub async fn mark_file_as_indexed_batch(
+    pool: &DbPool,
+    updates: Vec<MarkFileAsIndexed>,
+) -> Result<()> {
+    if updates.is_empty() {
+        return Ok(());
+    }
+
+    const BATCH_SIZE: usize = 1000;
+
+    for chunk in updates.chunks(BATCH_SIZE) {
+        let mut tx = pool
+            .begin()
+            .await
+            .context("failed to begin batch transaction")?;
+
+        let query_str = r#"
+            UPDATE files_metadata 
+            SET 
+                indexing_status = 'indexed', 
+                last_indexed_at = CURRENT_TIMESTAMP,
+                description = ?
+            WHERE id = ?
+        "#;
+
+        for update in chunk {
+            sqlx::query(query_str)
+                .bind(&update.description)
+                .bind(update.file_id)
+                .execute(&mut *tx)
+                .await
+                .context("failed to execute update in batch")?;
+        }
+
+        tx.commit()
+            .await
+            .context("failed to commit batch transaction")?;
+    }
 
     Ok(())
 }

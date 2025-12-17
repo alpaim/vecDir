@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS indexed_roots (
 );
 
 CREATE TABLE IF NOT EXISTS files_metadata (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, -- LanceDB link
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
     root_id INTEGER NOT NULL,             -- root_id from indexed_roots
     absolute_path TEXT UNIQUE NOT NULL,   -- absolute path to the file
     filename TEXT NOT NULL,               -- filename (maybe I can get it from absolute_path instead) but it is useful for SQL queries                 
@@ -53,3 +53,31 @@ CREATE TABLE IF NOT EXISTS files_metadata (
 CREATE INDEX idx_files_path ON files_metadata(absolute_path);
 CREATE INDEX idx_files_status ON files_metadata(indexing_status);
 CREATE INDEX idx_files_ext ON files_metadata(file_extension);
+
+CREATE TABLE IF NOT EXISTS file_chunks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_id INTEGER NOT NULL,
+    
+    chunk_index INTEGER NOT NULL,  -- index of chunk in file
+    content TEXT NOT NULL,         -- text part
+    
+    -- optional for syntax highlighting
+    start_char_idx INTEGER,
+    end_char_idx INTEGER,
+
+    FOREIGN KEY(file_id) REFERENCES files_metadata(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_chunks_file_id ON file_chunks(file_id);
+
+-- VECTORS
+
+CREATE VIRTUAL TABLE IF NOT EXISTS vec_chunks USING vec0(
+    embedding float[768] distance_metric=cosine      -- currently ONLY 768 
+);
+
+CREATE TRIGGER IF NOT EXISTS delete_vec_chunk
+AFTER DELETE ON file_chunks
+BEGIN
+  DELETE FROM vec_chunks WHERE rowid = OLD.id;
+END;

@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use anyhow::{Context, Ok, Result};
+use anyhow::{bail, Context, Ok, Result};
 use async_openai::{
     config::OpenAIConfig,
     types::{
@@ -179,5 +179,36 @@ impl AI {
             .context("failed to get content of llm message")?;
 
         Ok(llm_response_text)
+    }
+
+    pub fn prepare_matroshka(&self, mut embedding: Vec<f32>, n: usize) -> Result<Vec<f32>> {
+        if n == 0 {
+            bail!("Requested dimension n must be greater than 0");
+        }
+
+        let original_len = embedding.len();
+        if original_len < n {
+            bail!(
+                "Input embedding is too short: length is {}, but requested n is {}",
+                original_len,
+                n
+            );
+        }
+
+        embedding.truncate(n);
+
+        let sum_squares: f32 = embedding.iter().map(|&x| x * x).sum();
+        let norm = sum_squares.sqrt();
+
+        if norm < f32::EPSILON {
+            bail!("The truncated vector has a zero norm (it consists only of zeros)");
+        }
+
+        // normalizing
+        for val in embedding.iter_mut() {
+            *val /= norm;
+        }
+
+        Ok(embedding)
     }
 }
