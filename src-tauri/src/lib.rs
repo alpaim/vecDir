@@ -11,7 +11,6 @@ mod database;
 mod events;
 mod indexer;
 mod state;
-mod vector_store;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 // This function/command checks if app state is ready
@@ -66,7 +65,7 @@ pub fn run() {
                     .expect("failed to initialize database");
                 
                 // TODO: add handling of ai config
-                let openai_client = AI::new("http://127.0.0.1:1234", "lmstudio")
+                let openai_client = AI::new("http://127.0.0.1:1234/v1", "lmstudio")
                     .context("failed to create openai client")?;
                 
                 let state = AppState::new(sqlx_pool, app_dir, openai_client);
