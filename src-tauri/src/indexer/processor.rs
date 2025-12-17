@@ -4,10 +4,13 @@ use mime_guess::mime;
 use crate::{
     ai::AI,
     database::{
-        self, files::get_pending_files_for_space, models::LLMConfig, spaces::get_space_by_id,
+        self,
+        chunks::{add_chunk, add_chunks_batch, AddFileChunk},
+        files::{get_pending_files_for_space, mark_file_as_indexed_batch, MarkFileAsIndexed},
+        models::LLMConfig,
+        spaces::get_space_by_id,
         DbPool,
     },
-    vector_store::{manager::VectorStoreArcMutex, VectorStore},
 };
 
 async fn process_image(
@@ -36,20 +39,9 @@ async fn process_default(
     Ok("".to_string())
 }
 
-pub async fn process_space(
-    pool: &DbPool,
-    vector_store: &VectorStoreArcMutex,
-    ai_client: &AI,
-    limit: i32,
-) -> Result<()> {
+pub async fn process_space(pool: &DbPool, ai_client: &AI, space_id: i32, limit: i32) -> Result<()> {
     let mut descriptions: Vec<String> = Vec::new();
     let mut processed_files: Vec<i32> = Vec::new();
-
-    // get space_id from mutex; lock is temp only within this closure
-    let space_id = {
-        let guard = vector_store.lock().await;
-        guard.space_id
-    };
 
     let space = get_space_by_id(pool, space_id)
         .await
@@ -87,6 +79,9 @@ pub async fn process_space(
 
     const BATCH_SIZE: usize = 50;
 
+    let mut chunks_to_add: Vec<AddFileChunk> = Vec::new();
+    let mut updates_to_add: Vec<MarkFileAsIndexed> = Vec::new();
+
     let chunks_iter = descriptions
         .chunks(BATCH_SIZE)
         .zip(processed_files.chunks(BATCH_SIZE));
@@ -101,28 +96,52 @@ pub async fn process_space(
             continue;
         }
 
-        {
-            let guard = vector_store.lock().await;
+        for embedding_item in embeddings_response.data {
+            let idx = embedding_item.index as usize;
 
-            for embedding_item in embeddings_response.data {
-                if let Some(&file_id) = file_id_chunk.get(embedding_item.index as usize) {
-                    guard
-                        .index
-                        .add(file_id as u64, &embedding_item.embedding)
-                        .context(
-                            "failed to add embedding to vector store during processing space",
-                        )?;
-                }
+            if idx >= file_id_chunk.len() {
+                continue;
+            }
+
+            let file_id = file_id_chunk[idx];
+            let content = &desc_chunk[idx];
+            let is_content_empty = content.trim().is_empty();
+
+            // TODO: make default dimension const
+            let embedding = ai_client.prepare_matroshka(embedding_item.embedding.clone(), 768).context("failed to prepare matroshka to 768 dim")?;
+
+            if !is_content_empty {
+                let chunk = AddFileChunk {
+                    file_id: file_id,
+
+                    chunk_index: 0,
+                    content: content.clone(),
+
+                    start_char_idx: None,
+                    end_char_idx: None,
+
+                    embedding: embedding,
+                };
+
+                chunks_to_add.push(chunk);
+
+                let update: MarkFileAsIndexed = MarkFileAsIndexed {
+                    file_id: file_id,
+                    description: Some(content.clone()),
+                };
+
+                updates_to_add.push(update);
             }
         }
-
-        for &file_id in file_id_chunk {
-            database::files::mark_file_as_indexed(pool, file_id)
-                .await
-                .context("failed to mark file as indexed")?;
-            // TODO: add descrtion to database
-        }
     }
+
+    add_chunks_batch(pool, chunks_to_add)
+        .await
+        .context("failed to add chunks in batch in process_space")?;
+
+    mark_file_as_indexed_batch(pool, updates_to_add)
+        .await
+        .context("failed to update file indexing status in batch in process_space")?;
 
     Ok(())
 }
