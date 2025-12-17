@@ -87,6 +87,14 @@ async processSpace(spaceId: number) : Promise<Result<null, null>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async searchByEmdedding(spaceId: number, query: string, limit: number) : Promise<Result<VectorSearchResult[], null>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("search_by_emdedding", { spaceId, query, limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -112,6 +120,7 @@ export type FileMetadata = { id: number; root_id: number; absolute_path: string;
 export type IndexedRoot = { id: number; space_id: number; path: string; status: string }
 export type LLMConfig = { model: string; system_prompt: string; user_prompt: string }
 export type Space = { id: number; name: string; description: string | null; embedding_config: EmbeddingConfig; llm_config: LLMConfig; created_at: string }
+export type VectorSearchResult = { chunk_id: number; content: string; file_id: number; absolute_path: string; filename: string; distance: number }
 
 /** tauri-specta globals **/
 

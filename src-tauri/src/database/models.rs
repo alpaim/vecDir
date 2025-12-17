@@ -116,10 +116,10 @@ pub struct FileChunk {
 // VECTOR SEARCH RESULT
 #[derive(Debug, FromRow, Serialize, Type)]
 pub struct VectorSearchResult {
-    pub chunk_id: i64,
+    pub chunk_id: i32,
     pub content: String,
 
-    pub file_id: i64,
+    pub file_id: i32,
     pub absolute_path: String,
     pub filename: String,
 

@@ -11,6 +11,7 @@ mod database;
 mod events;
 mod indexer;
 mod state;
+mod search;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 // This function/command checks if app state is ready
@@ -37,6 +38,8 @@ pub fn run() {
             // INDEXER
             indexer::commands::index_space,
             indexer::commands::process_space,
+            // SEARCH
+            search::commands::search_by_emdedding,
         ])
         .events(collect_events![events::BackendReadyEvent,]);
 
