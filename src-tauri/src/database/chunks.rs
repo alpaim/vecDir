@@ -15,6 +15,12 @@ pub struct AddFileChunk {
     pub embedding: Vec<f32>,
 }
 
+fn f32_vec_to_bytes(data: &[f32]) -> Result<Vec<u8>> {
+    let bytes = data.iter().flat_map(|&f| f.to_le_bytes()).collect();
+
+    Ok(bytes)
+}
+
 pub async fn add_chunk(pool: &DbPool, chunk: AddFileChunk) -> Result<i32> {
     let mut tx = pool
         .begin()
@@ -39,8 +45,8 @@ pub async fn add_chunk(pool: &DbPool, chunk: AddFileChunk) -> Result<i32> {
     .await
     .context("failed to insert chunk in add_chunk")?;
 
-    let vector_json = serde_json::to_string(&chunk.embedding)
-        .context("failed to serialize embedding vector in add_chunk")?;
+    let vec_bytes = f32_vec_to_bytes(&chunk.embedding)
+        .context("failed to convert embedding vector to bytes add_chunk")?;
 
     sqlx::query(
         r#"
@@ -49,7 +55,7 @@ pub async fn add_chunk(pool: &DbPool, chunk: AddFileChunk) -> Result<i32> {
         "#,
     )
     .bind(chunk_id)
-    .bind(vector_json)
+    .bind(vec_bytes)
     .execute(&mut *tx)
     .await
     .context("failed to insert embedding to vec_chunks")?;
@@ -101,10 +107,12 @@ pub async fn add_chunks_batch(pool: &DbPool, chunks: Vec<AddFileChunk>) -> Resul
         let zip_iter = batch_ids.iter().zip(batch.iter());
 
         vec_builder.push_values(zip_iter, |mut b, (id, chunk)| {
-            let vector_json = serde_json::to_string(&chunk.embedding).unwrap_or_default();
+            let vec_bytes = f32_vec_to_bytes(&chunk.embedding)
+                .context("failed to convert embedding vector to bytes")
+                .unwrap();
 
             b.push_bind(id) // rowid
-                .push_bind(vector_json); // embedding
+                .push_bind(vec_bytes); // embedding
         });
 
         vec_builder
@@ -128,8 +136,8 @@ pub async fn search_similar_chunks(
     query_vector: Vec<f32>,
     limit: i32,
 ) -> Result<Vec<VectorSearchResult>> {
-    let query_json = serde_json::to_string(&query_vector)
-        .context("failed to serialize embedding vector in search_similar_chunks")?;
+    let query_bytes =
+        f32_vec_to_bytes(&query_vector).context("failed to convert embedding vector to bytes")?;
 
     let results = sqlx::query_as::<_, VectorSearchResult>(
         r#"
@@ -148,7 +156,7 @@ pub async fn search_similar_chunks(
         ORDER BY v.distance ASC
         "#,
     )
-    .bind(query_json)
+    .bind(query_bytes)
     .bind(limit)
     .fetch_all(pool)
     .await
