@@ -1,4 +1,4 @@
-import { MenubarCheckboxItem, MenubarContent, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
+import { MenubarCheckboxItem, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { useAppState } from "@/store/store";
 
 export function Spaces() {
@@ -17,6 +17,10 @@ export function Spaces() {
         <MenubarMenu>
             <MenubarTrigger>Spaces</MenubarTrigger>
             <MenubarContent>
+                <MenubarItem>
+                    New
+                </MenubarItem>
+                <MenubarSeparator />
                 {
                     spacesList.map(space => (
                         <MenubarCheckboxItem key={space.id} onClick={() => selectSpace(space.id)} checked={space.id === selectedSpace}>
