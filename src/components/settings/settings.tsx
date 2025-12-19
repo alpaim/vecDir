@@ -3,17 +3,19 @@ import { useForm } from "@tanstack/react-form";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Brain, FolderPen, SquareEqual, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { addRoot } from "@/lib/vecdir/roots/createRoot";
 import { getRootsBySpaceId } from "@/lib/vecdir/roots/getRoot";
+import { getSpaceById } from "@/lib/vecdir/spaces/getSpace";
+import { updateSpace } from "@/lib/vecdir/spaces/updateSpace";
 import { useAppState } from "@/store/store";
-import { Button } from "../ui/button";
-import { Card, CardContent, CardFooter } from "../ui/card";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
 
 interface EditSpaceParams {
     name: string;
-    description: string;
+    description: string | undefined;
 
     llmConfig: LLMConfig;
     embeddingConfig: EmbeddingConfig;
@@ -21,6 +23,7 @@ interface EditSpaceParams {
 
 export function Settings() {
     const [roots, setRoots] = useState<IndexedRoot[]>([]);
+    const [defaultValues, setDefaultValues] = useState<EditSpaceParams | undefined>();
 
     const selectedSpace = useAppState(state => state.selectedSpace);
 
@@ -34,38 +37,42 @@ export function Settings() {
         updateRoots(selectedSpace, setRoots).then(() => {});
     }, [selectedSpace]);
 
-    const defaultValues: EditSpaceParams = {
-        name: "default",
-        description: "default space",
+    useEffect(() => {
+        getSpaceById(selectedSpace).then((space) => {
+            if (space === null) {
+                return;
+            }
 
-        llmConfig: {
-            model: "mistralai/ministral-3-3b",
-            system_prompt: "you are a cool RAG decription tool",
-            user_prompt: "describe this image",
-        },
+            const values: EditSpaceParams = {
+                name: space.name,
+                description: space.description ? space.description : undefined,
 
-        embeddingConfig: {
-            model: "text-embedding-qwen3-embedding-0.6b",
-            dimensions: 768,
-        },
-    };
+                llmConfig: space.llm_config,
+                embeddingConfig: space.embedding_config,
+            };
+
+            setDefaultValues(values);
+        });
+    }, [selectedSpace]);
+
     const form = useForm({
         defaultValues,
 
         validators: { onChange: ({ value }) => !value ? "This field is required" : undefined },
 
         onSubmit: async ({ value }) => {
-            // const createdSpace = await createSpace(value.name, value.llmConfig, value.embeddingConfig);
+            const result = await updateSpace(
+                selectedSpace,
+                value.name,
+                value.description || "",
+                value.llmConfig,
+                value.embeddingConfig,
+            );
 
-            // if (createdSpace === undefined) {
-            //     // TODO: handle this exception
-            //     console.log("failed to create a new space");
-            //     return;
-            // }
-
-            // addSpaceToStore(createdSpace);
-
-            // navigate({ to: "/" });
+            if (result === false) {
+                // TODO: handle this exception
+                console.log("failed to update space");
+            }
         },
     });
 
@@ -73,7 +80,6 @@ export function Settings() {
         <div className="p-8 max-w-4xl mx-auto">
             <div className="mb-8">
                 <h2 className="text-3xl font-bold mb-2">Directories</h2>
-                <p>Directories to index</p>
             </div>
             <Card className="p-6 bg-card border-border">
                 <CardContent>
@@ -100,7 +106,7 @@ export function Settings() {
                 </CardContent>
                 <CardFooter>
                     <Button
-                        variant="outline"
+                        variant="default"
                         className="w-full"
                         onClick={async () => {
                             const path = await open({
