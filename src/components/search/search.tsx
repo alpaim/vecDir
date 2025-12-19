@@ -1,6 +1,5 @@
 import type { VectorSearchResult } from "@/lib/vecdir/bindings";
 import { useEffect, useState } from "react";
-import { commands } from "@/lib/vecdir/bindings";
 import { searchVectors } from "@/lib/vecdir/search/searchVectors";
 import { useAppState } from "@/store/store";
 import { DescriptionsColumn } from "./descriptions";

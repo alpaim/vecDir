@@ -43,7 +43,7 @@ export function CreateSpace() {
         validators: { onChange: ({ value }) => !value ? "This field is required" : undefined },
 
         onSubmit: async ({ value }) => {
-            const createdSpace = await createSpace(value.name, value.llmConfig, value.embeddingConfig);
+            const createdSpace = await createSpace(value.name, value.description, value.llmConfig, value.embeddingConfig);
 
             if (createdSpace === undefined) {
                 // TODO: handle this exception
