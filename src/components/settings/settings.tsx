@@ -1,16 +1,17 @@
-import type { EmbeddingConfig, LLMConfig } from "@/lib/vecdir/bindings";
-
+import type { EmbeddingConfig, IndexedRoot, LLMConfig } from "@/lib/vecdir/bindings";
 import { useForm } from "@tanstack/react-form";
-import { useNavigate } from "@tanstack/react-router";
-import { Brain, FolderPen, SquaresIntersect } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { createSpace } from "@/lib/vecdir/spaces/createSpace";
+import { open } from "@tauri-apps/plugin-dialog";
+import { Brain, FolderPen, SquareEqual, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { addRoot } from "@/lib/vecdir/roots/createRoot";
+import { getRootsBySpaceId } from "@/lib/vecdir/roots/getRoot";
 import { useAppState } from "@/store/store";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardFooter } from "../ui/card";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 
-interface CreateSpaceParams {
+interface EditSpaceParams {
     name: string;
     description: string;
 
@@ -18,11 +19,22 @@ interface CreateSpaceParams {
     embeddingConfig: EmbeddingConfig;
 }
 
-export function CreateSpace() {
-    const addSpaceToStore = useAppState(state => state.addSpace);
-    const navigate = useNavigate({ from: "/createSpace" });
+export function Settings() {
+    const [roots, setRoots] = useState<IndexedRoot[]>([]);
 
-    const defaultValues: CreateSpaceParams = {
+    const selectedSpace = useAppState(state => state.selectedSpace);
+
+    async function updateRoots(selectedSpaceId: number, set: (r: IndexedRoot[]) => void): Promise<void> {
+        const newRoots = await getRootsBySpaceId(selectedSpaceId);
+
+        set(newRoots);
+    }
+
+    useEffect(() => {
+        updateRoots(selectedSpace, setRoots).then(() => {});
+    }, [selectedSpace]);
+
+    const defaultValues: EditSpaceParams = {
         name: "default",
         description: "default space",
 
@@ -43,23 +55,74 @@ export function CreateSpace() {
         validators: { onChange: ({ value }) => !value ? "This field is required" : undefined },
 
         onSubmit: async ({ value }) => {
-            const createdSpace = await createSpace(value.name, value.llmConfig, value.embeddingConfig);
+            // const createdSpace = await createSpace(value.name, value.llmConfig, value.embeddingConfig);
 
-            if (createdSpace === undefined) {
-                // TODO: handle this exception
-                console.log("failed to create a new space");
-                return;
-            }
+            // if (createdSpace === undefined) {
+            //     // TODO: handle this exception
+            //     console.log("failed to create a new space");
+            //     return;
+            // }
 
-            addSpaceToStore(createdSpace);
+            // addSpaceToStore(createdSpace);
 
-            navigate({ to: "/" });
+            // navigate({ to: "/" });
         },
     });
+
     return (
         <div className="p-8 max-w-4xl mx-auto">
             <div className="mb-8">
-                <h2 className="text-3xl font-bold mb-2">Create new Space</h2>
+                <h2 className="text-3xl font-bold mb-2">Directories</h2>
+                <p>Directories to index</p>
+            </div>
+            <Card className="p-6 bg-card border-border">
+                <CardContent>
+                    <ul className="space-y-2">
+                        {
+                            roots.map(root => (
+                                <li
+                                    key={root.id}
+                                    className="flex items-center justify-between p-2 rounded-md border bg-card hover:bg-accent/50 transition-colors"
+                                >
+                                    <span>{root.path}</span>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                        onClick={() => {}}
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </li>
+                            ))
+                        }
+                    </ul>
+                </CardContent>
+                <CardFooter>
+                    <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={async () => {
+                            const path = await open({
+                                multiple: false,
+                                directory: true,
+                            });
+
+                            if (!path) {
+                                return;
+                            }
+
+                            await addRoot(selectedSpace, path);
+
+                            await updateRoots(selectedSpace, setRoots);
+                        }}
+                    >
+                        Add Directory
+                    </Button>
+                </CardFooter>
+            </Card>
+            <div className="mb-8 mt-8">
+                <h2 className="text-3xl font-bold mb-2">Edit this Space</h2>
             </div>
             <Card className="p-6 bg-card border-border">
                 <form
@@ -160,7 +223,7 @@ export function CreateSpace() {
                             )}
                         </form.Field>
                         <div className="flex items-center gap-2 mb-4">
-                            <SquaresIntersect className="h-5 w-5 text-primary" />
+                            <SquareEqual className="h-5 w-5 text-primary" />
                             <h3 className="text-xl font-semibold">Embedding Settings</h3>
                         </div>
                         <form.Field name="embeddingConfig.model" validators={{ onChange: ({ value }) => !value ? "This field is required!" : undefined }}>
@@ -175,6 +238,7 @@ export function CreateSpace() {
                                         onChange={e => field.handleChange(e.target.value)}
                                         placeholder="Embedding Model"
                                         className="border-border"
+                                        disabled={true}
                                     />
                                 </div>
                             )}
@@ -189,11 +253,10 @@ export function CreateSpace() {
                                 className="w-full"
                                 disabled={!canSubmit}
                             >
-                                {isSubmitting ? "Creating new Space" : "Create new Space"}
+                                {isSubmitting ? "Updating this Space" : "Update this Space"}
                             </Button>
                         )}
                     </form.Subscribe>
-
                 </form>
             </Card>
         </div>
