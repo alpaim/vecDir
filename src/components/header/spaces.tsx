@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { MenubarCheckboxItem, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { useAppState } from "@/store/store";
 
@@ -18,7 +19,9 @@ export function Spaces() {
             <MenubarTrigger>Spaces</MenubarTrigger>
             <MenubarContent>
                 <MenubarItem>
-                    New
+                    <Link to="/createSpace">
+                        New
+                    </Link>
                 </MenubarItem>
                 <MenubarSeparator />
                 {
