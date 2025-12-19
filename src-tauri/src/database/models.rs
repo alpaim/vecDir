@@ -39,13 +39,13 @@ impl Default for AppConfig {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct LLMConfig {
-    pub open_ai_base_url: String,
     pub model: String,
+    pub system_prompt: String,
+    pub user_prompt: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct EmbeddingConfig {
-    pub open_ai_base_url: String,
     pub model: String,
     pub dimensions: i32,
 }
@@ -58,8 +58,11 @@ pub struct Space {
     pub description: Option<String>,
 
     #[specta(type = EmbeddingConfig)]
-    pub embedding_config: Json<EmbeddingConfig>, 
-    
+    pub embedding_config: Json<EmbeddingConfig>,
+
+    #[specta(type = LLMConfig)] 
+    pub llm_config: Json<LLMConfig>,
+
     pub created_at: DateTime<Utc>,
 }
 
@@ -82,14 +85,43 @@ pub struct FileMetadata {
 
     pub absolute_path: String,
     pub filename: String,
-    pub file_extension: Option<String>,
+    pub file_extension: String,
 
     #[specta(type = i32)]
     pub file_size: u32,
 
+    pub description: Option<String>,
+
     pub modified_at_fs: DateTime<Utc>,
     pub last_indexed_at: Option<DateTime<Utc>>,
     pub content_hash: Option<String>,
+    
     pub indexing_status: String,
     pub indexing_error_message: Option<String>,
+}
+
+// CHUNKS
+#[derive(Debug, FromRow, Serialize, Type)]
+pub struct FileChunk {
+    pub id: i32,
+    pub file_id: i32,
+
+    pub chunk_index: i32,
+    pub content: String,
+
+    pub start_char_idx: Option<i32>,
+    pub end_char_idx: Option<i32>
+}
+
+// VECTOR SEARCH RESULT
+#[derive(Debug, FromRow, Serialize, Type)]
+pub struct VectorSearchResult {
+    pub chunk_id: i32,
+    pub content: String,
+
+    pub file_id: i32,
+    pub absolute_path: String,
+    pub filename: String,
+
+    pub distance: f32,
 }
