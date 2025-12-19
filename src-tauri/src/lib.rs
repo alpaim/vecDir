@@ -30,6 +30,7 @@ pub fn run() {
             database::commands::get_config,
             database::commands::update_config,
             database::commands::create_space,
+            database::commands::update_space,
             database::commands::get_space_by_id,
             database::commands::get_all_spaces,
             database::commands::add_root,
