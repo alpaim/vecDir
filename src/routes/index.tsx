@@ -11,11 +11,11 @@ function Index() {
     const [searchQeury, setSearchQuery] = useState<string | undefined>();
 
     return (
-        <div className="relative flex items-center justify-center h-full w-full">
-            <div className="absolute top-5 left-0 w-full px-5">
+        <div className="flex flex-col h-full w-full">
+            <div className="w-full top-5 left-0 px-5 pt-5">
                 <Input placeholder="Search..." className="font-mono" onChange={e => setSearchQuery(e.target.value)} value={searchQeury} />
             </div>
-            <div className="flex w-full">
+            <div className="flex-1 w-full h-full">
                 {
                     store.isBackendReady ? <Main searchQuery={searchQeury} /> : <Initializing />
                 }

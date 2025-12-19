@@ -8,6 +8,7 @@ use sqlx::{types::Json, Row};
 pub async fn create_space(
     pool: &DbPool,
     name: &str,
+    description: &str,
     llm_config: LLMConfig,
     embedding_config: EmbeddingConfig,
 ) -> Result<i32> {
@@ -16,12 +17,13 @@ pub async fn create_space(
 
     let record = sqlx::query(
         r#"
-        INSERT INTO spaces (name, llm_config, embedding_config)
+        INSERT INTO spaces (name, description, llm_config, embedding_config)
         VALUES (?, ?, ?)
         RETURNING id
         "#,
     )
     .bind(name)
+    .bind(description)
     .bind(llm_config_json)
     .bind(embedding_config_json)
     .fetch_one(pool)
@@ -30,6 +32,36 @@ pub async fn create_space(
     let id: i32 = record.get("id");
 
     Ok(id)
+}
+
+pub async fn update_space(
+    pool: &DbPool,
+    space_id: i32,
+    name: &str,
+    description: &str,
+    llm_config: LLMConfig,
+    embedding_config: EmbeddingConfig,
+) -> Result<()> {
+    let llm_config_json = Json(llm_config);
+    let embedding_config_json = Json(embedding_config);
+
+    sqlx::query(
+        r#"
+        UPDATE spaces 
+        SET name = ?, description = ?, llm_config = ?, embedding_config = ? 
+        WHERE id = ?
+        "#,
+    )
+    .bind(name)
+    .bind(description)
+    .bind(llm_config_json)
+    .bind(embedding_config_json)
+    .bind(space_id)
+    .execute(pool)
+    .await
+    .context("failed to update space")?;
+
+    Ok(())
 }
 
 pub async fn get_space_by_id(pool: &DbPool, space_id: i32) -> Result<Space> {

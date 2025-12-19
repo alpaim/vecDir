@@ -24,9 +24,17 @@ async updateConfig(config: AppConfig) : Promise<Result<null, null>> {
     else return { status: "error", error: e  as any };
 }
 },
-async createSpace(name: string, llmConfig: LLMConfig, embeddingConfig: EmbeddingConfig) : Promise<Result<number, null>> {
+async createSpace(name: string, description: string, llmConfig: LLMConfig, embeddingConfig: EmbeddingConfig) : Promise<Result<number, null>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("create_space", { name, llmConfig, embeddingConfig }) };
+    return { status: "ok", data: await TAURI_INVOKE("create_space", { name, description, llmConfig, embeddingConfig }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async updateSpace(spaceId: number, name: string, description: string, llmConfig: LLMConfig, embeddingConfig: EmbeddingConfig) : Promise<Result<boolean, null>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_space", { spaceId, name, description, llmConfig, embeddingConfig }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
