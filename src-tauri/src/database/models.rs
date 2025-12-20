@@ -42,12 +42,18 @@ pub struct LLMConfig {
     pub model: String,
     pub system_prompt: String,
     pub user_prompt: String,
+
+    pub api_base_url: String,
+    pub api_key: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct EmbeddingConfig {
     pub model: String,
     pub dimensions: i32,
+
+    pub api_base_url: String,
+    pub api_key: String,
 }
 
 #[derive(Debug, FromRow, Serialize, Type)]

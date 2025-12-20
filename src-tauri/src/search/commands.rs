@@ -17,7 +17,6 @@ pub async fn search_by_emdedding(
 ) -> Result<Vec<VectorSearchResult>, ()> {
     let result = search::embedding::search_by_emdedding(
         &state.db,
-        &state.openai_client,
         space_id,
         query,
         limit,
