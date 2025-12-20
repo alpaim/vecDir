@@ -1,5 +1,6 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { Toaster } from "sonner";
 import { Header } from "@/components/header/header";
 import { Statusbar } from "@/components/statusbar/statusbar";
 import { useBackendReady } from "@/hooks/useBackendReady";
@@ -17,6 +18,7 @@ function RootLayout() {
 
             <Statusbar />
 
+            <Toaster />
             <TanStackRouterDevtools position="top-right" />
         </div>
     );
