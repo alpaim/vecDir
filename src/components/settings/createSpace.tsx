@@ -3,6 +3,7 @@ import type { EmbeddingConfig, LLMConfig } from "@/lib/vecdir/bindings";
 import { useForm } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
 import { Brain, FileImage, FileType, FolderPen, SquaresIntersect, Text } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,8 @@ export function CreateSpace() {
                 console.log("failed to create a new space");
                 return;
             }
+
+            toast("Space Created");
 
             addSpaceToStore(createdSpace);
 

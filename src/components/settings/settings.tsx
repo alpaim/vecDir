@@ -39,7 +39,7 @@ export function Settings() {
 
     useEffect(() => {
         getSpaceById(selectedSpace).then((space) => {
-            if (space === null) {
+            if (space === undefined) {
                 return;
             }
 

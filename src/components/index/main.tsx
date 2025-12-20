@@ -1,5 +1,5 @@
 import type { Space } from "@/lib/vecdir/bindings";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { RefreshCcw, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/index/logo";
@@ -18,11 +18,27 @@ async function onIndexSpace(spaceId: number) {
 export function Main({ searchQuery }: { searchQuery: string | undefined }) {
     const [space, setSpace] = useState<Space | undefined>();
 
+    const spaces = useAppState(state => state.spaces);
     const selectedSpace = useAppState(state => state.selectedSpace);
 
+    const navigate = useNavigate({ from: "/" });
+
     useEffect(() => {
-        getSpaceById(selectedSpace).then(s => setSpace(s || undefined));
+        getSpaceById(selectedSpace).then((s) => {
+            if (s === undefined) {
+                navigate({ to: "/createSpace" });
+                return;
+            }
+
+            setSpace(s);
+        });
     }, [selectedSpace]);
+
+    useEffect(() => {
+        if (spaces.size <= 0) {
+            navigate({ to: "/createSpace" });
+        }
+    }, [spaces]);
 
     if (searchQuery !== undefined && searchQuery !== "") {
         return (

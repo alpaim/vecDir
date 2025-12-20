@@ -11,12 +11,12 @@ export async function getAllSpaces(): Promise<Space[]> {
     return [];
 }
 
-export async function getSpaceById(spaceId: number): Promise<Space | null> {
+export async function getSpaceById(spaceId: number): Promise<Space | undefined> {
     const result = await commands.getSpaceById(spaceId);
 
     if (result.status === "ok") {
         return result.data;
     }
 
-    return result.error;
+    return undefined;
 }
