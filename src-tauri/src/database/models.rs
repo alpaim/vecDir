@@ -35,26 +35,37 @@ impl Default for AppConfig {
     }
 }
 
-// SPACES
+// AI
+
+#[derive(Debug, Serialize, Deserialize, Clone, Type)]
+pub struct AIPrompt {
+    pub system_prompt: String,
+    pub user_prompt: String,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct LLMConfig {
-    pub model: String,
-    pub system_prompt: String,
-    pub user_prompt: String,
-
     pub api_base_url: String,
     pub api_key: String,
+
+    pub model: String,
+    
+    pub text_processing_prompt: AIPrompt,
+    pub image_processing_prompt: AIPrompt,
+    pub default_processing_prompt: AIPrompt,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct EmbeddingConfig {
-    pub model: String,
-    pub dimensions: i32,
-
     pub api_base_url: String,
     pub api_key: String,
+
+    pub model: String,
+
+    pub dimensions: i32,
 }
+
+// SPACES
 
 #[derive(Debug, FromRow, Serialize, Type)]
 pub struct Space {

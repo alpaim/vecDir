@@ -21,8 +21,8 @@ async fn process_image(
     let description = ai_client
         .describe_image_from_file(
             &image_path,
-            &llm_config.system_prompt,
-            &llm_config.user_prompt,
+            &llm_config.image_processing_prompt.system_prompt,
+            &llm_config.image_processing_prompt.user_prompt,
             &llm_config.model,
         )
         .await
