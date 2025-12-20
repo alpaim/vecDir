@@ -8,10 +8,10 @@ use crate::{ai::AI, state::AppState};
 
 mod ai;
 mod database;
-mod events;
 mod indexer;
-mod state;
 mod search;
+mod state;
+mod status;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 // This function/command checks if app state is ready
@@ -42,7 +42,11 @@ pub fn run() {
             // SEARCH
             search::commands::search_by_emdedding,
         ])
-        .events(collect_events![events::BackendReadyEvent,]);
+        .events(collect_events![
+            status::events::BackendReadyEvent,
+            status::events::StatusEvent,
+            status::events::ErrorEvent,
+        ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
     builder
@@ -67,12 +71,12 @@ pub fn run() {
                 let sqlx_pool = database::init::initialize_database(&app_dir)
                     .await
                     .expect("failed to initialize database");
-                
+
                 let state = AppState::new(sqlx_pool);
                 app_handle.manage(state);
 
                 // emitting event to frontend telling backend is ready
-                events::BackendReadyEvent.emit(&app_handle)
+                status::events::BackendReadyEvent.emit(&app_handle)
             });
 
             Ok(())

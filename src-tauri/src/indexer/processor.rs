@@ -1,5 +1,7 @@
 use anyhow::{Context, Ok, Result};
 use mime_guess::mime;
+use tauri::{AppHandle, Emitter};
+use tauri_specta::Event;
 
 use crate::{
     ai::AI,
@@ -10,6 +12,10 @@ use crate::{
         models::LLMConfig,
         spaces::get_space_by_id,
         DbPool,
+    },
+    status::{
+        self,
+        events::{StatusEvent, StatusType},
     },
 };
 
@@ -39,7 +45,12 @@ async fn process_default(
     Ok("".to_string())
 }
 
-pub async fn process_space(pool: &DbPool, space_id: i32, limit: i32) -> Result<()> {
+pub async fn process_space(
+    app_handle: AppHandle,
+    pool: &DbPool,
+    space_id: i32,
+    limit: i32,
+) -> Result<()> {
     let mut descriptions: Vec<String> = Vec::new();
     let mut processed_files: Vec<i32> = Vec::new();
 
@@ -64,7 +75,9 @@ pub async fn process_space(pool: &DbPool, space_id: i32, limit: i32) -> Result<(
         return Ok(());
     }
 
-    for file in pending_files {
+    let total_files = pending_files.len() as i32;
+
+    for (i, file) in pending_files.iter().enumerate() {
         let file_id = file.id;
         let file_path = file.absolute_path.clone();
         let guess = mime_guess::from_path(file_path);
@@ -81,6 +94,14 @@ pub async fn process_space(pool: &DbPool, space_id: i32, limit: i32) -> Result<(
 
         descriptions.push(description);
         processed_files.push(file_id);
+
+        StatusEvent {
+            status: StatusType::Processing,
+            message: Some("Processing Space".to_string()),
+            total: Some(total_files),
+            processed: Some(i as i32),
+        }
+        .emit(&app_handle)?;
     }
 
     const BATCH_SIZE: usize = 50;
@@ -114,7 +135,9 @@ pub async fn process_space(pool: &DbPool, space_id: i32, limit: i32) -> Result<(
             let is_content_empty = content.trim().is_empty();
 
             // TODO: make default dimension const
-            let embedding = ai_client_emdedding.prepare_matroshka(embedding_item.embedding.clone(), 768).context("failed to prepare matroshka to 768 dim")?;
+            let embedding = ai_client_emdedding
+                .prepare_matroshka(embedding_item.embedding.clone(), 768)
+                .context("failed to prepare matroshka to 768 dim")?;
 
             if !is_content_empty {
                 let chunk = AddFileChunk {
@@ -137,6 +160,14 @@ pub async fn process_space(pool: &DbPool, space_id: i32, limit: i32) -> Result<(
                 };
 
                 updates_to_add.push(update);
+
+                StatusEvent {
+                    status: StatusType::Processing,
+                    message: Some("Embedding Results".to_string()),
+                    total: Some(processed_files.len() as i32),
+                    processed: Some(chunks_to_add.len() as i32),
+                }
+                .emit(&app_handle)?;
             }
         }
     }
@@ -148,6 +179,22 @@ pub async fn process_space(pool: &DbPool, space_id: i32, limit: i32) -> Result<(
     mark_file_as_indexed_batch(pool, updates_to_add)
         .await
         .context("failed to update file indexing status in batch in process_space")?;
+
+    StatusEvent {
+        status: StatusType::Idle,
+        message: None,
+        total: None,
+        processed: None,
+    }
+    .emit(&app_handle)?;
+
+    StatusEvent {
+        status: StatusType::Notification,
+        message: Some("Space Processed".to_string()),
+        total: None,
+        processed: None,
+    }
+    .emit(&app_handle)?;
 
     Ok(())
 }
