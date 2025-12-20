@@ -68,11 +68,7 @@ pub fn run() {
                     .await
                     .expect("failed to initialize database");
                 
-                // TODO: add handling of ai config
-                let openai_client = AI::new("http://127.0.0.1:1234/v1", "lmstudio")
-                    .context("failed to create openai client")?;
-                
-                let state = AppState::new(sqlx_pool, app_dir, openai_client);
+                let state = AppState::new(sqlx_pool);
                 app_handle.manage(state);
 
                 // emitting event to frontend telling backend is ready

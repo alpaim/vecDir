@@ -18,7 +18,7 @@ pub async fn create_space(
     let record = sqlx::query(
         r#"
         INSERT INTO spaces (name, description, llm_config, embedding_config)
-        VALUES (?, ?, ?)
+        VALUES (?, ?, ?, ?)
         RETURNING id
         "#,
     )

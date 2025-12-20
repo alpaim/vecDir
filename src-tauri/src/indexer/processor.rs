@@ -21,8 +21,8 @@ async fn process_image(
     let description = ai_client
         .describe_image_from_file(
             &image_path,
-            &llm_config.system_prompt,
-            &llm_config.user_prompt,
+            &llm_config.image_processing_prompt.system_prompt,
+            &llm_config.image_processing_prompt.user_prompt,
             &llm_config.model,
         )
         .await
@@ -39,7 +39,7 @@ async fn process_default(
     Ok("".to_string())
 }
 
-pub async fn process_space(pool: &DbPool, ai_client: &AI, space_id: i32, limit: i32) -> Result<()> {
+pub async fn process_space(pool: &DbPool, space_id: i32, limit: i32) -> Result<()> {
     let mut descriptions: Vec<String> = Vec::new();
     let mut processed_files: Vec<i32> = Vec::new();
 
@@ -49,6 +49,12 @@ pub async fn process_space(pool: &DbPool, ai_client: &AI, space_id: i32, limit: 
 
     let llm_config = space.llm_config.0;
     let embedding_config = space.embedding_config.0;
+
+    let ai_client_llm = AI::new(&llm_config.api_base_url, &llm_config.api_key)
+        .context("failed to create openai client")?;
+
+    let ai_client_emdedding = AI::new(&embedding_config.api_base_url, &embedding_config.api_key)
+        .context("failed to create openai client")?;
 
     let pending_files = get_pending_files_for_space(pool, space_id, limit)
         .await
@@ -65,10 +71,10 @@ pub async fn process_space(pool: &DbPool, ai_client: &AI, space_id: i32, limit: 
         let mime_type = guess.first_or_octet_stream();
 
         let description = match mime_type.type_() {
-            mime::IMAGE => process_image(&file.absolute_path, ai_client, &llm_config)
+            mime::IMAGE => process_image(&file.absolute_path, &ai_client_llm, &llm_config)
                 .await
                 .context("failed to process image")?,
-            _ => process_default(&file.absolute_path, ai_client, &llm_config)
+            _ => process_default(&file.absolute_path, &ai_client_llm, &llm_config)
                 .await
                 .context("failed to process default file")?,
         };
@@ -87,7 +93,7 @@ pub async fn process_space(pool: &DbPool, ai_client: &AI, space_id: i32, limit: 
         .zip(processed_files.chunks(BATCH_SIZE));
 
     for (desc_chunk, file_id_chunk) in chunks_iter {
-        let embeddings_response = ai_client
+        let embeddings_response = ai_client_emdedding
             .create_embeddings_batch(desc_chunk.to_vec(), embedding_config.model.clone())
             .await
             .context("failed to create embeddings batch during processing space")?;
@@ -108,7 +114,7 @@ pub async fn process_space(pool: &DbPool, ai_client: &AI, space_id: i32, limit: 
             let is_content_empty = content.trim().is_empty();
 
             // TODO: make default dimension const
-            let embedding = ai_client.prepare_matroshka(embedding_item.embedding.clone(), 768).context("failed to prepare matroshka to 768 dim")?;
+            let embedding = ai_client_emdedding.prepare_matroshka(embedding_item.embedding.clone(), 768).context("failed to prepare matroshka to 768 dim")?;
 
             if !is_content_empty {
                 let chunk = AddFileChunk {

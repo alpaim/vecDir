@@ -9,7 +9,6 @@ use crate::{
 // TODO: Sepa
 pub async fn search_by_emdedding(
     db: &DbPool,
-    ai_client: &AI,
     space_id: i32,
     query: String,
     limit: i32,
@@ -17,6 +16,9 @@ pub async fn search_by_emdedding(
     let space = database::spaces::get_space_by_id(db, space_id).await?;
 
     let embedding_config = space.embedding_config.0;
+
+    let ai_client = AI::new(&embedding_config.api_base_url, &embedding_config.api_key)
+        .context("failed to create openai client")?;
 
     let embedding_response = ai_client
         .create_embedding(query, embedding_config.model)
