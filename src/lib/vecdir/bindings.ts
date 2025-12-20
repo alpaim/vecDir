@@ -40,7 +40,7 @@ async updateSpace(spaceId: number, name: string, description: string, llmConfig:
     else return { status: "error", error: e  as any };
 }
 },
-async getSpaceById(spaceId: number) : Promise<Result<Space, null>> {
+async getSpaceById(spaceId: number) : Promise<Result<Space, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_space_by_id", { spaceId }) };
 } catch (e) {

@@ -72,13 +72,13 @@ pub async fn update_space(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_space_by_id(state: State<'_, AppState>, space_id: i32) -> Result<Space, ()> {
-    let spaces = database::spaces::get_space_by_id(&state.db, space_id)
+pub async fn get_space_by_id(state: State<'_, AppState>, space_id: i32) -> Result<Space, String> {
+    let space = database::spaces::get_space_by_id(&state.db, space_id)
         .await
         .context("failed to get space by id in command")
-        .unwrap();
+        .map_err(|e| e.to_string())?;
 
-    Ok(spaces)
+    Ok(space)
 }
 
 #[tauri::command]
