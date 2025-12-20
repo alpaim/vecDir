@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::database::models::FileMetadata;
 use crate::database::DbPool;
 use anyhow::{Context, Ok, Result};
@@ -221,4 +223,43 @@ pub async fn get_all_files(pool: &DbPool) -> Result<Vec<FileMetadata>> {
         .await?;
 
     Ok(res)
+}
+
+pub async fn get_all_files_in_root(pool: &DbPool, root_id: i32) -> Result<HashSet<String>> {
+    let rows = sqlx::query_scalar("SELECT absolute_path FROM files_metadata WHERE root_id = ?")
+        .bind(root_id)
+        .fetch_all(pool)
+        .await?;
+
+    let paths: HashSet<String> = rows.into_iter().collect();
+
+    Ok(paths)
+}
+
+pub async fn delete_files_by_paths(pool: &DbPool, root_id: i32, paths: Vec<String>) -> Result<()> {
+    if paths.is_empty() {
+        return Ok(());
+    }
+
+    const BATCH_SIZE: usize = 500;
+
+    for chunk in paths.chunks(BATCH_SIZE) {
+        let mut query_builder = QueryBuilder::new("DELETE FROM files_metadata WHERE root_id =");
+        query_builder.push_bind(root_id);
+        query_builder.push(" AND absolute_path IN (");
+
+        let mut separated = query_builder.separated(", ");
+
+        for path in chunk {
+            separated.push_bind(path);
+        }
+
+        separated.push_unseparated(")");
+
+        let query = query_builder.build();
+
+        query.execute(pool).await?;
+    }
+
+    Ok(())
 }
