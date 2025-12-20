@@ -19,7 +19,7 @@ export function Spaces() {
             <MenubarTrigger>Spaces</MenubarTrigger>
             <MenubarContent>
                 <MenubarItem>
-                    <Link to="/createSpace">
+                    <Link to="/createSpace" className="w-full">
                         New
                     </Link>
                 </MenubarItem>
