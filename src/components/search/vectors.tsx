@@ -1,9 +1,19 @@
 import type { VectorSearchResult } from "@/lib/vecdir/bindings";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { Database, FileCode } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
+function getImage(path: string) {
+    const res = convertFileSrc(path);
+
+    return res;
+}
+
 export function VectorsSearchColumn({ results }: { results: VectorSearchResult[] }) {
+    results.forEach((result) => {
+        getImage(result.absolute_path);
+    });
     return (
         <div className="flex flex-col min-h-0">
             <div className="flex items-center gap-2 mb-4 shrink-0">
@@ -31,9 +41,10 @@ export function VectorsSearchColumn({ results }: { results: VectorSearchResult[]
                                         %
                                     </Badge>
                                 </div>
-                                <pre className="text-xs font-mono text-muted-foreground bg-background p-2 rounded overflow-x-auto leading-relaxed">
-                                    {result.content}
-                                </pre>
+                                <img src={getImage(result.absolute_path)} />
+
+                                {/* <pre className="text-xs font-mono text-muted-foreground bg-background p-2 rounded overflow-x-auto leading-relaxed">
+                                </pre> */}
                             </div>
                         ))}
                     </div>
