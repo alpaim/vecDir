@@ -94,6 +94,16 @@ pub async fn add_root(pool: &DbPool, space_id: i32, path: &str) -> Result<i32> {
     Ok(id)
 }
 
+pub async fn delete_root(pool: &DbPool, pool_id: i32) -> Result<()> {
+    sqlx::query("DELETE FROM indexed_roots WHERE id = ?")
+        .bind(pool_id)
+        .execute(pool)
+        .await
+        .context("failed to delete root")?;
+
+    Ok(())
+}
+
 pub async fn get_roots_by_space_id(pool: &DbPool, space_id: i32) -> Result<Vec<IndexedRoot>> {
     let res = sqlx::query_as::<_, IndexedRoot>("SELECT * FROM indexed_roots WHERE space_id = ?")
         .bind(space_id)

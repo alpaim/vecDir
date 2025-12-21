@@ -64,6 +64,14 @@ async addRoot(spaceId: number, path: string) : Promise<Result<number, null>> {
     else return { status: "error", error: e  as any };
 }
 },
+async deleteRoot(rootId: number) : Promise<Result<null, null>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_root", { rootId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getRootsBySpaceId(spaceId: number) : Promise<Result<IndexedRoot[], null>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_roots_by_space_id", { spaceId }) };

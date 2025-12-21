@@ -44,10 +44,11 @@ pub async fn create_space(
     llm_config: LLMConfig,
     embedding_config: EmbeddingConfig,
 ) -> Result<i32, ()> {
-    let space = database::spaces::create_space(&state.db, name, description, llm_config, embedding_config)
-        .await
-        .context("failed to create space in command")
-        .unwrap();
+    let space =
+        database::spaces::create_space(&state.db, name, description, llm_config, embedding_config)
+            .await
+            .context("failed to create space in command")
+            .unwrap();
 
     Ok(space as i32)
 }
@@ -62,10 +63,17 @@ pub async fn update_space(
     llm_config: LLMConfig,
     embedding_config: EmbeddingConfig,
 ) -> Result<bool, ()> {
-    database::spaces::update_space(&state.db, space_id, name, description, llm_config, embedding_config)
-        .await
-        .context("failed to create space in command")
-        .unwrap();
+    database::spaces::update_space(
+        &state.db,
+        space_id,
+        name,
+        description,
+        llm_config,
+        embedding_config,
+    )
+    .await
+    .context("failed to create space in command")
+    .unwrap();
 
     Ok(true)
 }
@@ -101,6 +109,17 @@ pub async fn add_root(state: State<'_, AppState>, space_id: i32, path: &str) -> 
         .unwrap();
 
     Ok(root)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn delete_root(state: State<'_, AppState>, root_id: i32) -> Result<(), ()> {
+    let res = database::spaces::delete_root(&state.db, root_id)
+        .await
+        .context("failed to delete root in command")
+        .unwrap();
+
+    Ok(res)
 }
 
 #[tauri::command]
