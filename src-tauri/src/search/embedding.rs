@@ -6,7 +6,6 @@ use crate::{
     database::{self, models::VectorSearchResult, DbPool},
 };
 
-// TODO: Sepa
 pub async fn search_by_emdedding(
     db: &DbPool,
     space_id: i32,
@@ -36,7 +35,7 @@ pub async fn search_by_emdedding(
         .prepare_matroshka(embedding_raw, 768)
         .context("failed to prepare embedding")?;
 
-    let search_response = database::chunks::search_similar_chunks(db, embedding, limit)
+    let search_response = database::chunks::search_similar_chunks(db, space_id, embedding, limit)
         .await
         .context("failed to get files by ids in command")?;
 

@@ -133,6 +133,7 @@ pub async fn add_chunks_batch(pool: &DbPool, chunks: Vec<AddFileChunk>) -> Resul
 
 pub async fn search_similar_chunks(
     pool: &DbPool,
+    space_id: i32,
     query_vector: Vec<f32>,
     limit: i32,
 ) -> Result<Vec<VectorSearchResult>> {
@@ -151,13 +152,16 @@ pub async fn search_similar_chunks(
         FROM vec_chunks v
         JOIN file_chunks fc ON fc.id = v.rowid
         JOIN files_metadata fm ON fm.id = fc.file_id
+        JOIN indexed_roots ir ON fm.root_id = ir.id
         WHERE v.embedding MATCH ? 
           AND k = ?
+          AND ir.space_id = ?                       
         ORDER BY v.distance ASC
         "#,
     )
     .bind(query_bytes)
     .bind(limit)
+    .bind(space_id)
     .fetch_all(pool)
     .await
     .context("failed to find similar vectors in database in search_similar_vectors")?;
