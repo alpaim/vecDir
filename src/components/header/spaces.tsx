@@ -9,11 +9,6 @@ export function Spaces() {
 
     const spacesList = Array.from(spaces.values());
 
-    Object.values(spaces).map((space) => {
-        console.log(space);
-        return space;
-    });
-
     return (
         <MenubarMenu>
             <MenubarTrigger>Spaces</MenubarTrigger>
