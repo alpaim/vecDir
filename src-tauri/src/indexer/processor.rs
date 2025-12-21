@@ -1,3 +1,5 @@
+use std::fmt::format;
+
 use anyhow::{Context, Ok, Result};
 use mime_guess::mime;
 use tauri::{AppHandle, Emitter};
@@ -8,7 +10,10 @@ use crate::{
     database::{
         self,
         chunks::{add_chunk, add_chunks_batch, AddFileChunk},
-        files::{get_pending_files_for_space, mark_file_as_indexed_batch, MarkFileAsIndexed},
+        files::{
+            get_pending_files_for_space, mark_file_as_indexed, mark_file_as_indexed_batch,
+            MarkFileAsIndexed,
+        },
         models::LLMConfig,
         spaces::get_space_by_id,
         DbPool,
@@ -32,7 +37,10 @@ async fn process_image(
             &llm_config.model,
         )
         .await
-        .context("failed to describe image in processor")?;
+        .context(format!(
+            "failed to describe image in processor: {:?}",
+            image_path
+        ))?;
 
     Ok(description)
 }
@@ -80,17 +88,24 @@ pub async fn process_space(
     for (i, file) in pending_files.iter().enumerate() {
         let file_id = file.id;
         let file_path = file.absolute_path.clone();
-        let guess = mime_guess::from_path(file_path);
+        let guess = mime_guess::from_path(&file_path);
         let mime_type = guess.first_or_octet_stream();
 
-        let description = match mime_type.type_() {
+        let description_result = match mime_type.type_() {
             mime::IMAGE => process_image(&file.absolute_path, &ai_client_llm, &llm_config)
                 .await
-                .context("failed to process image")?,
+                .context("failed to process image"),
             _ => process_default(&file.absolute_path, &ai_client_llm, &llm_config)
                 .await
-                .context("failed to process default file")?,
+                .context("failed to process default file"),
         };
+
+        if description_result.is_err() {
+            println!("failed to process file: {:?}", &file_path);
+            continue;
+        }
+
+        let description = description_result.unwrap();
 
         descriptions.push(description);
         processed_files.push(file_id);
@@ -135,9 +150,16 @@ pub async fn process_space(
             let is_content_empty = content.trim().is_empty();
 
             // TODO: make default dimension const
-            let embedding = ai_client_emdedding
+            let embedding_result = ai_client_emdedding
                 .prepare_matroshka(embedding_item.embedding.clone(), 768)
-                .context("failed to prepare matroshka to 768 dim")?;
+                .context("failed to prepare matroshka to 768 dim");
+
+            if embedding_result.is_err() {
+                println!("failed to create batch embedding {:?}", embedding_result);
+                continue;
+            }
+
+            let embedding = embedding_result.unwrap();
 
             if !is_content_empty {
                 let chunk = AddFileChunk {
