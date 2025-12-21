@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { addRoot } from "@/lib/vecdir/roots/createRoot";
 import { getRootsBySpaceId } from "@/lib/vecdir/roots/getRoot";
-import { getSpaceById } from "@/lib/vecdir/spaces/getSpace";
+import { getAllSpaces, getSpaceById } from "@/lib/vecdir/spaces/getSpace";
 import { updateSpace } from "@/lib/vecdir/spaces/updateSpace";
 import { useAppState } from "@/store/store";
 
@@ -26,6 +26,8 @@ export function Settings() {
     const [defaultValues, setDefaultValues] = useState<EditSpaceParams | undefined>();
 
     const selectedSpace = useAppState(state => state.selectedSpace);
+
+    const setSpaces = useAppState(state => state.setSpaces);
 
     async function updateRoots(selectedSpaceId: number, set: (r: IndexedRoot[]) => void): Promise<void> {
         const newRoots = await getRootsBySpaceId(selectedSpaceId);
@@ -73,6 +75,10 @@ export function Settings() {
                 // TODO: handle this exception
                 console.log("failed to update space");
             }
+
+            const spaces = await getAllSpaces();
+
+            setSpaces(spaces);
         },
     });
 
