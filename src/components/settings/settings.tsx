@@ -3,6 +3,7 @@ import { useForm } from "@tanstack/react-form";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Brain, FileImage, FileType, FolderPen, SquareEqual, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -80,6 +81,8 @@ export function Settings() {
             const spaces = await getAllSpaces();
 
             setSpaces(spaces);
+
+            toast("Space updated");
         },
     });
 
