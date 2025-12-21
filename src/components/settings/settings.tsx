@@ -8,6 +8,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { addRoot } from "@/lib/vecdir/roots/createRoot";
+import { deleteRoot } from "@/lib/vecdir/roots/deleteRoot";
 import { getRootsBySpaceId } from "@/lib/vecdir/roots/getRoot";
 import { getAllSpaces, getSpaceById } from "@/lib/vecdir/spaces/getSpace";
 import { updateSpace } from "@/lib/vecdir/spaces/updateSpace";
@@ -101,7 +102,10 @@ export function Settings() {
                                         variant="ghost"
                                         size="icon"
                                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                        onClick={() => {}}
+                                        onClick={async () => {
+                                            await deleteRoot(root.id);
+                                            await updateRoots(selectedSpace, setRoots);
+                                        }}
                                     >
                                         <X className="h-4 w-4" />
                                     </Button>
