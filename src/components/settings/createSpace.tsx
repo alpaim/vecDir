@@ -2,7 +2,7 @@ import type { EmbeddingConfig, LLMConfig } from "@/lib/vecdir/bindings";
 
 import { useForm } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
-import { Brain, FileImage, FileType, FolderPen, SquaresIntersect, Text } from "lucide-react";
+import { Brain, FileImage, FileType, FolderPen, SquaresIntersect } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

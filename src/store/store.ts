@@ -1,8 +1,8 @@
-import type { EmbeddingConfig, LLMConfig, Space } from "@/lib/vecdir/bindings";
+import type { Space } from "@/lib/vecdir/bindings";
 import type { AppConfig } from "@/types/config";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { fileStore, storage } from "@/store/storage";
+import { storage } from "@/store/storage";
 
 const APP_STORAGE_NAME = "app-storage";
 
