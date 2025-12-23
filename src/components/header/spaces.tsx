@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { MenubarCheckboxItem, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarTrigger } from "@/components/ui/menubar";
 import { useAppState } from "@/store/store";
 
@@ -9,14 +9,17 @@ export function Spaces() {
 
     const spacesList = Array.from(spaces.values());
 
+    const navigate = useNavigate();
+
     return (
         <MenubarMenu>
             <MenubarTrigger>Spaces</MenubarTrigger>
             <MenubarContent>
-                <MenubarItem>
-                    <Link to="/createSpace" className="w-full">
-                        New
-                    </Link>
+                <MenubarItem onClick={() => {
+                    navigate({ to: "/createSpace" });
+                }}
+                >
+                    New
                 </MenubarItem>
                 <MenubarSeparator />
                 {
