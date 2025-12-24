@@ -1,26 +1,36 @@
-import { Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Spaces } from "@/components/header/spaces";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarShortcut, MenubarTrigger } from "@/components/ui/menubar";
 
 export function Header() {
+    const navigate = useNavigate();
+
     return (
         <header>
             <Menubar className="rounded-none p-0 border-0">
                 <MenubarMenu>
                     <MenubarTrigger>File</MenubarTrigger>
                     <MenubarContent>
-                        <MenubarItem asChild>
-                            <Link to="/">
-                                Home
-                                <MenubarShortcut>⌘T</MenubarShortcut>
-                            </Link>
+                        <MenubarItem
+                            asChild
+                            onClick={() => {
+                                navigate({ to: "/" });
+                            }}
+                        >
+                            Home
+                            <MenubarShortcut>⌘T</MenubarShortcut>
+
                         </MenubarItem>
                         <MenubarSeparator />
-                        <MenubarItem asChild>
-                            <Link to="/settings">
-                                Settings
-                                <MenubarShortcut>⌘P</MenubarShortcut>
-                            </Link>
+                        <MenubarItem
+                            asChild
+                            onClick={() => {
+                                navigate({ to: "/settings" });
+                            }}
+                        >
+                            Settings
+                            <MenubarShortcut>⌘P</MenubarShortcut>
+
                         </MenubarItem>
                         <MenubarSeparator />
                         <MenubarItem>
