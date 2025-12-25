@@ -2,7 +2,7 @@
 
 > **Vectorize your directories for better search**
 
-A local-only, privacy-minded desktop application for semantic/similarity file indexing and retrieval. Unlike traditional search tools that look for exact keyword matches, this tool uses vector embeddings to understand the *meaning* of your queries.
+A local-only, very lightweight (**~10MB**), privacy-minded desktop application for semantic/similarity file indexing and retrieval. Unlike traditional search tools that look for exact keyword matches, this tool uses vector embeddings to understand the *meaning* of your queries.
 
 Built for privacy and performance using **Tauri**, **Rust**, **SQLite-Vec** and many other great technologies.
 
@@ -18,7 +18,7 @@ This is not another Electron-based AI tool that burns your RAM and sends data to
 
 **Type and Memory Safety**: The entire backend is written in Rust, compiled to native machine code with zero-cost abstractions and guaranteed memory safety. No garbage collection pauses, no runtime overhead.
 
-**Native Performance**: Unlike Electron apps, VecDir uses the operating system's native WebView. The final binary is around **30MB**. The application consumes minimal memory, leaving maximum resources available for your local LLM inference.
+**Native Performance**: Unlike Electron apps, VecDir uses the operating system's native WebView. The final binary is around **10MB**. The application consumes minimal memory, leaving maximum resources available for your local LLM inference.
 
 **Complete Privacy**: All processing happens on your machine. No API calls to external services unless you explicitly configure them. Your files, your models, your data. Period.
 
@@ -69,7 +69,7 @@ The vast majority of Desktop apps are built over Electron. Really great technolo
 
 Unlike typical desktop AI assistants built on Electron, vecDir leverages the Tauri v2 framework.
 
-* **Binary Size**: By utilizing the operating system's native WebView and compiling the backend to native Rust machine code, the final application distributable is approximately **~30MB**.
+* **Binary Size**: By utilizing the operating system's native WebView and compiling the backend to native Rust machine code, the final application distributable is approximately **~10MB**.
 * **Memory Footprint**: The application avoids the overhead of bundling a full Chromium instance. This ensures the background indexing processes and vector search operations leave maximum system resources available for the local LLMs running alongside the application.
 
 ### 4. Backend and Frontend communication
