@@ -1,5 +1,7 @@
 # VecDir
 
+![vecdir](public/vecdir-banner.png)
+
 > **Vectorize your directories for better search**
 
 A local-only, very lightweight (**~10MB**), privacy-minded desktop application for semantic/similarity file indexing and retrieval. Unlike traditional search tools that look for exact keyword matches, this tool uses vector embeddings to understand the *meaning* of your queries.
