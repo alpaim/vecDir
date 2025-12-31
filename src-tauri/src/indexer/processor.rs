@@ -24,11 +24,16 @@ use crate::{
     },
 };
 
+pub struct FileProcessResult {
+    pub file_chunks: Option<Vec<AddFileChunk>>,
+    pub descrtipion: Option<String>,
+}
+
 async fn process_image(
     image_path: &String,
     ai_client: &AI,
     llm_config: &LLMConfig,
-) -> Result<String> {
+) -> Result<FileProcessResult> {
     let description = ai_client
         .describe_image_from_file(
             &image_path,
@@ -42,15 +47,34 @@ async fn process_image(
             image_path
         ))?;
 
-    Ok(description)
+    let result = FileProcessResult {
+        descrtipion: Some(description),
+        file_chunks: None,
+    };
+
+    Ok(result)
+}
+
+async fn process_text(file_path: &String, ai_client: &AI) -> Result<FileProcessResult> {
+    let result = FileProcessResult {
+        descrtipion: None,
+        file_chunks: None,
+    };
+
+    Ok(result)
 }
 
 async fn process_default(
     file_path: &String,
     ai_client: &AI,
     llm_config: &LLMConfig,
-) -> Result<String> {
-    Ok("".to_string())
+) -> Result<FileProcessResult> {
+    let result = FileProcessResult {
+        descrtipion: None,
+        file_chunks: None,
+    };
+
+    Ok(result)
 }
 
 pub async fn process_space(
@@ -61,6 +85,9 @@ pub async fn process_space(
 ) -> Result<()> {
     let mut descriptions: Vec<String> = Vec::new();
     let mut processed_files: Vec<i32> = Vec::new();
+
+    let mut chunks_to_add: Vec<AddFileChunk> = Vec::new();
+    let mut updates_to_add: Vec<MarkFileAsIndexed> = Vec::new();
 
     let space = get_space_by_id(pool, space_id)
         .await
@@ -91,24 +118,54 @@ pub async fn process_space(
         let guess = mime_guess::from_path(&file_path);
         let mime_type = guess.first_or_octet_stream();
 
-        let description_result = match mime_type.type_() {
+        let file_process_result = match mime_type.type_() {
             mime::IMAGE => process_image(&file.absolute_path, &ai_client_llm, &llm_config)
                 .await
                 .context("failed to process image"),
+            mime::TEXT => process_text(&file_path, &ai_client_emdedding)
+                .await
+                .context("failed to process text file"),
             _ => process_default(&file.absolute_path, &ai_client_llm, &llm_config)
                 .await
                 .context("failed to process default file"),
         };
 
-        if description_result.is_err() {
+        if file_process_result.is_err() {
             println!("failed to process file: {:?}", &file_path);
             continue;
         }
 
-        let description = description_result.unwrap();
+        let file_process_value = file_process_result.unwrap();
 
-        descriptions.push(description);
-        processed_files.push(file_id);
+        let desciprtion_option = file_process_value.descrtipion;
+        let file_chunks_option = file_process_value.file_chunks;
+
+        if desciprtion_option.is_none() && file_chunks_option.is_none() {
+            println!(
+                "failed to process file: {:?} | both description and file chunks are empty",
+                &file_path
+            );
+        }
+
+        if file_chunks_option.is_some() {
+            let file_chunks = file_chunks_option.unwrap();
+
+            chunks_to_add.extend(file_chunks);
+
+            let update: MarkFileAsIndexed = MarkFileAsIndexed {
+                file_id: file_id,
+                description: None,
+            };
+
+            updates_to_add.push(update);
+        }
+
+        if desciprtion_option.is_some() {
+            let description = desciprtion_option.unwrap();
+
+            descriptions.push(description);
+            processed_files.push(file_id);
+        }
 
         StatusEvent {
             status: StatusType::Processing,
@@ -120,9 +177,6 @@ pub async fn process_space(
     }
 
     const BATCH_SIZE: usize = 50;
-
-    let mut chunks_to_add: Vec<AddFileChunk> = Vec::new();
-    let mut updates_to_add: Vec<MarkFileAsIndexed> = Vec::new();
 
     let chunks_iter = descriptions
         .chunks(BATCH_SIZE)
