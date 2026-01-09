@@ -12,7 +12,6 @@ export function Header() {
                     <MenubarTrigger>File</MenubarTrigger>
                     <MenubarContent>
                         <MenubarItem
-                            asChild
                             onClick={() => {
                                 navigate({ to: "/" });
                             }}
@@ -23,7 +22,6 @@ export function Header() {
                         </MenubarItem>
                         <MenubarSeparator />
                         <MenubarItem
-                            asChild
                             onClick={() => {
                                 navigate({ to: "/settings" });
                             }}
