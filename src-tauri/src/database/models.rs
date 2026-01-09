@@ -67,6 +67,10 @@ pub struct EmbeddingConfig {
     pub text_processing_prompt: AIPrompt,
     pub image_processing_prompt: AIPrompt,
     pub default_processing_prompt: AIPrompt,
+
+    pub search_prompt: AIPrompt,
+
+    pub multimodal: bool,
 }
 
 // SPACES
