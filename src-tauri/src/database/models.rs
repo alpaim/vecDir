@@ -63,6 +63,10 @@ pub struct EmbeddingConfig {
     pub model: String,
 
     pub dimensions: i32,
+
+    pub text_processing_prompt: AIPrompt,
+    pub image_processing_prompt: AIPrompt,
+    pub default_processing_prompt: AIPrompt,
 }
 
 // SPACES
