@@ -266,45 +266,36 @@ pub async fn process_space_multimodal_embedding(
         return Ok(());
     }
 
-    const BATCH_SIZE: usize = 50;
     let total_files = pending_files.len() as i32;
+    for (i, file) in pending_files.iter().enumerate() {
+        let file_path = file.absolute_path.clone();
+        let guess = mime_guess::from_path(&file_path);
+        let mime_type = guess.first_or_octet_stream();
 
-    for (i, chunk) in pending_files.chunks(BATCH_SIZE).enumerate() {
-        let mut inputs: Vec<ai::embedding::multimodal_llamacpp::MultimodalEmbeddingInput> =
-            Vec::new();
-
-        for file in chunk.iter() {
-            let file_path = file.absolute_path.clone();
-            let guess = mime_guess::from_path(&file_path);
-            let mime_type = guess.first_or_octet_stream();
-
-            match mime_type.type_() {
-                mime::IMAGE => {
-                    let image_url = ai_client_emdedding
+        let input = match mime_type.type_() {
+            mime::IMAGE => ai::embedding::multimodal_llamacpp::MultimodalEmbeddingInput {
+                text: Some(
+                    embedding_config
+                        .image_processing_prompt
+                        .system_prompt
+                        .clone(),
+                ),
+                image_url: Some(
+                    ai_client_emdedding
                         .image_to_base64(&file_path)
                         .await
-                        .context("failed to get image base64 url")?;
-                    let input = ai::embedding::multimodal_llamacpp::MultimodalEmbeddingInput {
-                        text: Some(
-                            embedding_config
-                                .image_processing_prompt
-                                .system_prompt
-                                .clone(),
-                        ),
-                        image_url: Some(image_url),
-                    };
-
-                    inputs.push(input);
-                }
-                _ => {}
-            };
-        }
-
+                        .context("failed to get image base64 url")?,
+                ),
+            },
+            _ => ai::embedding::multimodal_llamacpp::MultimodalEmbeddingInput {
+                text: None,
+                image_url: None,
+            },
+        };
         let embeddings_response = ai_client_emdedding
-            .create_embeddings_batch_qwen3vl_llamacpp(inputs, embedding_config.model.clone())
+            .create_embedding_qwen3vl_llamacpp(input, embedding_config.model.clone())
             .await
-            .context("failed to create multimodal embeddings in batch during processing space")?;
-
+            .context("failed to create multimodal embedding during processing space")?;
         if embeddings_response.data.is_empty() {
             continue;
         }
@@ -313,13 +304,6 @@ pub async fn process_space_multimodal_embedding(
         let mut updates_to_add: Vec<MarkFileAsIndexed> = Vec::new();
 
         for embedding_item in embeddings_response.data {
-            let idx = embedding_item.index as usize;
-
-            if idx >= chunk.len() {
-                continue;
-            }
-
-            let file = &chunk[idx];
             let file_id = file.id;
 
             // TODO: make default dimension const
@@ -372,6 +356,115 @@ pub async fn process_space_multimodal_embedding(
         }
         .emit(&app_handle)?;
     }
+
+    // LLama.cpp server implementation currently doesn't support batching
+
+    // const BATCH_SIZE: usize = 50;
+    // let total_files = pending_files.len() as i32;
+
+    // for (i, chunk) in pending_files.chunks(BATCH_SIZE).enumerate() {
+    //     let mut inputs: Vec<ai::embedding::multimodal_llamacpp::MultimodalEmbeddingInput> =
+    //         Vec::new();
+
+    //     for file in chunk.iter() {
+    //         let file_path = file.absolute_path.clone();
+    //         let guess = mime_guess::from_path(&file_path);
+    //         let mime_type = guess.first_or_octet_stream();
+
+    //         match mime_type.type_() {
+    //             mime::IMAGE => {
+    //                 let image_url = ai_client_emdedding
+    //                     .image_to_base64(&file_path)
+    //                     .await
+    //                     .context("failed to get image base64 url")?;
+    //                 let input = ai::embedding::multimodal_llamacpp::MultimodalEmbeddingInput {
+    //                     text: Some(
+    //                         embedding_config
+    //                             .image_processing_prompt
+    //                             .system_prompt
+    //                             .clone(),
+    //                     ),
+    //                     image_url: Some(image_url),
+    //                 };
+
+    //                 inputs.push(input);
+    //             }
+    //             _ => {}
+    //         };
+    //     }
+
+    //     let embeddings_response = ai_client_emdedding
+    //         .create_embeddings_batch_qwen3vl_llamacpp(inputs, embedding_config.model.clone())
+    //         .await
+    //         .context("failed to create multimodal embeddings in batch during processing space")?;
+
+    //     if embeddings_response.data.is_empty() {
+    //         continue;
+    //     }
+
+    //     let mut chunks_to_add: Vec<AddFileChunk> = Vec::new();
+    //     let mut updates_to_add: Vec<MarkFileAsIndexed> = Vec::new();
+
+    //     for embedding_item in embeddings_response.data {
+    //         let idx = embedding_item.index as usize;
+
+    //         if idx >= chunk.len() {
+    //             continue;
+    //         }
+
+    //         let file = &chunk[idx];
+    //         let file_id = file.id;
+
+    //         // TODO: make default dimension const
+    //         let embedding_result = ai_client_emdedding
+    //             .prepare_matroshka(embedding_item.embedding.clone(), 768)
+    //             .context("failed to prepare matroshka to 768 dim");
+
+    //         if embedding_result.is_err() {
+    //             println!("failed to create batch embedding {:?}", embedding_result);
+    //             continue;
+    //         }
+
+    //         let embedding = embedding_result.unwrap();
+
+    //         let file_chunk = AddFileChunk {
+    //             file_id: file_id,
+
+    //             chunk_index: 0,
+    //             content: None,
+
+    //             start_char_idx: None,
+    //             end_char_idx: None,
+
+    //             embedding: embedding,
+    //         };
+
+    //         chunks_to_add.push(file_chunk);
+
+    //         let update: MarkFileAsIndexed = MarkFileAsIndexed {
+    //             file_id: file_id,
+    //             description: None,
+    //         };
+
+    //         updates_to_add.push(update);
+    //     }
+
+    //     add_chunks_batch(pool, chunks_to_add)
+    //         .await
+    //         .context("failed to add chunks in batch in process_space")?;
+
+    //     mark_file_as_indexed_batch(pool, updates_to_add)
+    //         .await
+    //         .context("failed to update file indexing status in batch in process_space")?;
+
+    //     StatusEvent {
+    //         status: StatusType::Processing,
+    //         message: Some("Processing Space".to_string()),
+    //         total: Some(total_files),
+    //         processed: Some(i as i32),
+    //     }
+    //     .emit(&app_handle)?;
+    // }
 
     StatusEvent {
         status: StatusType::Idle,
