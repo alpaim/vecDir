@@ -132,7 +132,7 @@ pub struct FileChunk {
     pub file_id: i32,
 
     pub chunk_index: i32,
-    pub content: String,
+    pub content: Option<String>,
 
     pub start_char_idx: Option<i32>,
     pub end_char_idx: Option<i32>
@@ -142,7 +142,7 @@ pub struct FileChunk {
 #[derive(Debug, FromRow, Serialize, Type)]
 pub struct VectorSearchResult {
     pub chunk_id: i32,
-    pub content: String,
+    pub content: Option<String>,
 
     pub file_id: i32,
     pub absolute_path: String,

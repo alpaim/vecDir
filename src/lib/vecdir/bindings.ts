@@ -144,7 +144,7 @@ export type LLMConfig = { api_base_url: string; api_key: string; model: string; 
 export type Space = { id: number; name: string; description: string | null; embedding_config: EmbeddingConfig; llm_config: LLMConfig; created_at: string }
 export type StatusEvent = { status: StatusType; message: string | null; total: number | null; processed: number | null }
 export type StatusType = "Idle" | "Indexing" | "Processing" | "Notification" | "Error"
-export type VectorSearchResult = { chunk_id: number; content: string; file_id: number; absolute_path: string; filename: string; distance: number }
+export type VectorSearchResult = { chunk_id: number; content: string | null; file_id: number; absolute_path: string; filename: string; distance: number }
 
 /** tauri-specta globals **/
 

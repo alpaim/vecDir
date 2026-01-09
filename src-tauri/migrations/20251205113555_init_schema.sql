@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS file_chunks (
     file_id INTEGER NOT NULL,
     
     chunk_index INTEGER NOT NULL,  -- index of chunk in file
-    content TEXT NOT NULL,         -- text part
+    content TEXT,                  -- text part
     
     -- optional for syntax highlighting
     start_char_idx INTEGER,
