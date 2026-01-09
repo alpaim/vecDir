@@ -92,7 +92,7 @@ impl AI {
         input: ai::embedding::multimodal_llamacpp::MultimodalEmbeddingInput,
         model: String,
     ) -> Result<CreateEmbeddingResponse> {
-        let mut content = vec![json!({})];
+        let mut content = Vec::new();
 
         if let Some(text) = input.text {
             content.push(json!({
