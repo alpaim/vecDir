@@ -1,1 +1,1 @@
-pub mod multimodal_llamacpp;
+pub mod vecbox;

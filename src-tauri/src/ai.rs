@@ -16,7 +16,6 @@ use async_openai::{
     Client,
 };
 use base64::Engine;
-use serde_json::json;
 
 use crate::ai::{self};
 
@@ -81,37 +80,17 @@ impl AI {
         Ok(response)
     }
 
-    // the expected structure of qwen3vl embedding multimodal request in llamacpp
-    // accroding to this PR: https://github.com/ggml-org/llama.cpp/pull/18665
-    // and exact this commit: https://github.com/ggml-org/llama.cpp/pull/18665/commits/56a0d87bd022ab017484523beac26cc3a946c5a4
-
-    // struct ai::embedding::multimodal_llamacpp::MultimodalEmbeddingInput is currently typed in this manner to prevent accidentally usage
-
-    pub async fn create_embedding_qwen3vl_llamacpp(
+    pub async fn create_embedding_vecbox(
         &self,
-        input: ai::embedding::multimodal_llamacpp::MultimodalEmbeddingInput,
+        input: ai::embedding::vecbox::VecBoxEmbeddingInput,
         model: String,
     ) -> Result<CreateEmbeddingResponse> {
-        let mut content = Vec::new();
+        let content_parts = input.to_content_parts();
 
-        if let Some(text) = input.text {
-            content.push(json!({
-                "type": "text",
-                "text": text,
-            }));
-        }
-
-        if let Some(url) = input.image_url {
-            content.push(json!({
-                "type": "image_url",
-                "image_url": { "url": url },
-            }));
-        }
-
-        let request = ai::embedding::multimodal_llamacpp::MultimodalEmbeddingRequest {
-            model: model,
-            input: json!(content),
-            encoding_format: None,
+        let request = ai::embedding::vecbox::VecBoxEmbeddingRequest {
+            model: Some(model),
+            input: content_parts,
+            instruction: input.instruction,
         };
 
         let response: CreateEmbeddingResponse = self
@@ -119,53 +98,7 @@ impl AI {
             .embeddings()
             .create_byot(&request)
             .await
-            .context("failed to generate multimodal embedding using qwen3vl and llamacpp")
-            .unwrap();
-
-        Ok(response)
-    }
-
-    pub async fn create_embeddings_batch_qwen3vl_llamacpp(
-        &self,
-        inputs: Vec<ai::embedding::multimodal_llamacpp::MultimodalEmbeddingInput>,
-        model: String,
-    ) -> Result<CreateEmbeddingResponse> {
-        let content_array: Vec<serde_json::Value> = inputs
-            .into_iter()
-            .map(|input| {
-                let mut content = Vec::new();
-
-                if let Some(text) = input.text {
-                    content.push(json!({
-                        "type": "text",
-                        "text": text,
-                    }));
-                }
-
-                if let Some(url) = input.image_url {
-                    content.push(json!({
-                        "type": "image_url",
-                        "image_url": { "url": url },
-                    }));
-                }
-
-                json!(content)
-            })
-            .collect();
-
-        let request = ai::embedding::multimodal_llamacpp::MultimodalEmbeddingRequest {
-            model: model,
-            input: json!(content_array),
-            encoding_format: None,
-        };
-
-        let response: CreateEmbeddingResponse = self
-            .client
-            .embeddings()
-            .create_byot(&request)
-            .await
-            .context("failed to generate batch of multimodal embedding using qwen3vl and llamacpp")
-            .unwrap();
+            .context("failed to generate vecBox embedding")?;
 
         Ok(response)
     }

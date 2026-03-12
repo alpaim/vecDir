@@ -6,22 +6,18 @@ use tauri::{AppHandle, Emitter};
 use tauri_specta::Event;
 
 use crate::{
-    ai::{self, embedding, AI},
+    ai::{self, AI},
     database::{
-        self,
-        chunks::{add_chunk, add_chunks_batch, AddFileChunk},
+        chunks::{add_chunks_batch, AddFileChunk},
         files::{
             get_pending_files_for_space, mark_file_as_indexed, mark_file_as_indexed_batch,
             MarkFileAsIndexed,
         },
-        models::{EmbeddingConfig, LLMConfig, Space},
+        models::{EmbeddingBackendType, EmbeddingConfig, LLMConfig, Space},
         spaces::get_space_by_id,
         DbPool,
     },
-    status::{
-        self,
-        events::{StatusEvent, StatusType},
-    },
+    status::events::{StatusEvent, StatusType},
 };
 
 async fn process_image(
@@ -64,16 +60,17 @@ pub async fn process_space(
         .context("failed to get space in process_space")?;
     let embedding_config = &space.embedding_config.0;
 
-    if embedding_config.multimodal {
-        process_space_multimodal_embedding(app_handle, pool, space, limit)
-            .await
-            .context("failed to process space using multimodal embedding")
-            .unwrap();
-    } else {
-        process_space_llm(app_handle, pool, space, limit)
-            .await
-            .context("failed to process space using LLM description embedding")
-            .unwrap();
+    match embedding_config.backend_type {
+        EmbeddingBackendType::VecBox if embedding_config.multimodal => {
+            process_space_vecbox_multimodal(app_handle, pool, space, limit)
+                .await
+                .context("failed to process space using vecBox multimodal embedding")?;
+        }
+        EmbeddingBackendType::OpenAICompat | EmbeddingBackendType::VecBox => {
+            process_space_llm(app_handle, pool, space, limit)
+                .await
+                .context("failed to process space using LLM description embedding")?;
+        }
     }
 
     Ok(())
@@ -245,7 +242,7 @@ pub async fn process_space_llm(
     Ok(())
 }
 
-pub async fn process_space_multimodal_embedding(
+pub async fn process_space_vecbox_multimodal(
     app_handle: AppHandle,
     pool: &DbPool,
     space: Space,
@@ -255,7 +252,7 @@ pub async fn process_space_multimodal_embedding(
 
     let embedding_config = space.embedding_config.0;
 
-    let ai_client_emdedding = AI::new(&embedding_config.api_base_url, &embedding_config.api_key)
+    let ai_client_embedding = AI::new(&embedding_config.api_base_url, &embedding_config.api_key)
         .context("failed to create openai client")?;
 
     let pending_files = get_pending_files_for_space(pool, space_id, limit)
@@ -273,29 +270,36 @@ pub async fn process_space_multimodal_embedding(
         let mime_type = guess.first_or_octet_stream();
 
         let input = match mime_type.type_() {
-            mime::IMAGE => ai::embedding::multimodal_llamacpp::MultimodalEmbeddingInput {
-                text: Some(
+            mime::IMAGE => ai::embedding::vecbox::VecBoxEmbeddingInput {
+                instruction: Some(
                     embedding_config
                         .image_processing_prompt
                         .system_prompt
                         .clone(),
                 ),
+                text: Some(
+                    embedding_config
+                        .image_processing_prompt
+                        .user_prompt
+                        .clone(),
+                ),
                 image_url: Some(
-                    ai_client_emdedding
+                    ai_client_embedding
                         .image_to_base64(&file_path)
                         .await
                         .context("failed to get image base64 url")?,
                 ),
             },
-            _ => ai::embedding::multimodal_llamacpp::MultimodalEmbeddingInput {
-                text: None,
-                image_url: None,
-            },
+            _ => {
+                continue;
+            }
         };
-        let embeddings_response = ai_client_emdedding
-            .create_embedding_qwen3vl_llamacpp(input, embedding_config.model.clone())
+
+        let embeddings_response = ai_client_embedding
+            .create_embedding_vecbox(input, embedding_config.model.clone())
             .await
-            .context("failed to create multimodal embedding during processing space")?;
+            .context("failed to create vecBox embedding during processing space")?;
+
         if embeddings_response.data.is_empty() {
             continue;
         }
@@ -306,8 +310,7 @@ pub async fn process_space_multimodal_embedding(
         for embedding_item in embeddings_response.data {
             let file_id = file.id;
 
-            // TODO: make default dimension const
-            let embedding_result = ai_client_emdedding
+            let embedding_result = ai_client_embedding
                 .prepare_matroshka(embedding_item.embedding.clone(), 768)
                 .context("failed to prepare matroshka to 768 dim");
 
@@ -356,115 +359,6 @@ pub async fn process_space_multimodal_embedding(
         }
         .emit(&app_handle)?;
     }
-
-    // LLama.cpp server implementation currently doesn't support batching
-
-    // const BATCH_SIZE: usize = 50;
-    // let total_files = pending_files.len() as i32;
-
-    // for (i, chunk) in pending_files.chunks(BATCH_SIZE).enumerate() {
-    //     let mut inputs: Vec<ai::embedding::multimodal_llamacpp::MultimodalEmbeddingInput> =
-    //         Vec::new();
-
-    //     for file in chunk.iter() {
-    //         let file_path = file.absolute_path.clone();
-    //         let guess = mime_guess::from_path(&file_path);
-    //         let mime_type = guess.first_or_octet_stream();
-
-    //         match mime_type.type_() {
-    //             mime::IMAGE => {
-    //                 let image_url = ai_client_emdedding
-    //                     .image_to_base64(&file_path)
-    //                     .await
-    //                     .context("failed to get image base64 url")?;
-    //                 let input = ai::embedding::multimodal_llamacpp::MultimodalEmbeddingInput {
-    //                     text: Some(
-    //                         embedding_config
-    //                             .image_processing_prompt
-    //                             .system_prompt
-    //                             .clone(),
-    //                     ),
-    //                     image_url: Some(image_url),
-    //                 };
-
-    //                 inputs.push(input);
-    //             }
-    //             _ => {}
-    //         };
-    //     }
-
-    //     let embeddings_response = ai_client_emdedding
-    //         .create_embeddings_batch_qwen3vl_llamacpp(inputs, embedding_config.model.clone())
-    //         .await
-    //         .context("failed to create multimodal embeddings in batch during processing space")?;
-
-    //     if embeddings_response.data.is_empty() {
-    //         continue;
-    //     }
-
-    //     let mut chunks_to_add: Vec<AddFileChunk> = Vec::new();
-    //     let mut updates_to_add: Vec<MarkFileAsIndexed> = Vec::new();
-
-    //     for embedding_item in embeddings_response.data {
-    //         let idx = embedding_item.index as usize;
-
-    //         if idx >= chunk.len() {
-    //             continue;
-    //         }
-
-    //         let file = &chunk[idx];
-    //         let file_id = file.id;
-
-    //         // TODO: make default dimension const
-    //         let embedding_result = ai_client_emdedding
-    //             .prepare_matroshka(embedding_item.embedding.clone(), 768)
-    //             .context("failed to prepare matroshka to 768 dim");
-
-    //         if embedding_result.is_err() {
-    //             println!("failed to create batch embedding {:?}", embedding_result);
-    //             continue;
-    //         }
-
-    //         let embedding = embedding_result.unwrap();
-
-    //         let file_chunk = AddFileChunk {
-    //             file_id: file_id,
-
-    //             chunk_index: 0,
-    //             content: None,
-
-    //             start_char_idx: None,
-    //             end_char_idx: None,
-
-    //             embedding: embedding,
-    //         };
-
-    //         chunks_to_add.push(file_chunk);
-
-    //         let update: MarkFileAsIndexed = MarkFileAsIndexed {
-    //             file_id: file_id,
-    //             description: None,
-    //         };
-
-    //         updates_to_add.push(update);
-    //     }
-
-    //     add_chunks_batch(pool, chunks_to_add)
-    //         .await
-    //         .context("failed to add chunks in batch in process_space")?;
-
-    //     mark_file_as_indexed_batch(pool, updates_to_add)
-    //         .await
-    //         .context("failed to update file indexing status in batch in process_space")?;
-
-    //     StatusEvent {
-    //         status: StatusType::Processing,
-    //         message: Some("Processing Space".to_string()),
-    //         total: Some(total_files),
-    //         processed: Some(i as i32),
-    //     }
-    //     .emit(&app_handle)?;
-    // }
 
     StatusEvent {
         status: StatusType::Idle,
