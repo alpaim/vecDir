@@ -7,7 +7,7 @@ pub struct AddFileChunk {
     pub file_id: i32,
 
     pub chunk_index: i32,
-    pub content: String,
+    pub content: Option<String>,
 
     pub start_char_idx: Option<i32>,
     pub end_char_idx: Option<i32>,

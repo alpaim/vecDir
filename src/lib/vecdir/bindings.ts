@@ -136,7 +136,8 @@ statusEvent: "status-event"
 export type AIPrompt = { system_prompt: string; user_prompt: string }
 export type AppConfig = { theme?: string; indexer_parallelism?: number; default_openai_url: string | null }
 export type BackendReadyEvent = null
-export type EmbeddingConfig = { api_base_url: string; api_key: string; model: string; dimensions: number }
+export type EmbeddingBackendType = "openai_compat" | "vecbox"
+export type EmbeddingConfig = { backend_type?: EmbeddingBackendType; api_base_url: string; api_key: string; model: string; dimensions: number; text_processing_prompt: AIPrompt; image_processing_prompt: AIPrompt; default_processing_prompt: AIPrompt; search_prompt: AIPrompt; multimodal: boolean }
 export type ErrorEvent = { message: string; context: string | null }
 export type FileMetadata = { id: number; root_id: number; absolute_path: string; filename: string; file_extension: string; file_size: number; description: string | null; modified_at_fs: string; last_indexed_at: string | null; content_hash: string | null; indexing_status: string; indexing_error_message: string | null }
 export type IndexedRoot = { id: number; space_id: number; path: string; status: string }
@@ -144,7 +145,7 @@ export type LLMConfig = { api_base_url: string; api_key: string; model: string; 
 export type Space = { id: number; name: string; description: string | null; embedding_config: EmbeddingConfig; llm_config: LLMConfig; created_at: string }
 export type StatusEvent = { status: StatusType; message: string | null; total: number | null; processed: number | null }
 export type StatusType = "Idle" | "Indexing" | "Processing" | "Notification" | "Error"
-export type VectorSearchResult = { chunk_id: number; content: string; file_id: number; absolute_path: string; filename: string; distance: number }
+export type VectorSearchResult = { chunk_id: number; content: string | null; file_id: number; absolute_path: string; filename: string; distance: number }
 
 /** tauri-specta globals **/
 

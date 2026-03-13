@@ -17,6 +17,8 @@ use async_openai::{
 };
 use base64::Engine;
 
+use crate::ai::{self};
+
 pub mod embedding;
 pub mod llm;
 
@@ -74,6 +76,29 @@ impl AI {
             .create(args)
             .await
             .context("failed to generate embeddings batch")?;
+
+        Ok(response)
+    }
+
+    pub async fn create_embedding_vecbox(
+        &self,
+        input: ai::embedding::vecbox::VecBoxEmbeddingInput,
+        model: String,
+    ) -> Result<CreateEmbeddingResponse> {
+        let content_parts = input.to_content_parts();
+
+        let request = ai::embedding::vecbox::VecBoxEmbeddingRequest {
+            model: Some(model),
+            input: content_parts,
+            instruction: input.instruction,
+        };
+
+        let response: CreateEmbeddingResponse = self
+            .client
+            .embeddings()
+            .create_byot(&request)
+            .await
+            .context("failed to generate vecBox embedding")?;
 
         Ok(response)
     }

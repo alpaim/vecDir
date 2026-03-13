@@ -1,11 +1,12 @@
 import type { EmbeddingConfig, IndexedRoot, LLMConfig } from "@/lib/vecdir/bindings";
 import { useForm } from "@tanstack/react-form";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Brain, FileImage, FileType, FolderPen, SquareEqual, X } from "lucide-react";
+import { Brain, FileImage, FileType, FolderPen, Search, SquareEqual, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { addRoot } from "@/lib/vecdir/roots/createRoot";
@@ -408,6 +409,173 @@ export function Settings() {
                                 </div>
                             )}
                         </form.Field>
+                        <form.Field name="embeddingConfig.multimodal" validators={{ onChange: ({ value }) => !value ? "This field is required!" : undefined }}>
+                            {field => (
+                                <div className="flex justify-between space-x-5 space-y-2">
+                                    <Label htmlFor={field.name}>Multimodal (this feature is highly experimental and intended only for Qwen3-VL-Embedding and LLama.cpp backend)</Label>
+                                    <Checkbox
+                                        id={field.name}
+                                        name={field.name}
+                                        checked={field.state.value}
+                                        onBlur={field.handleBlur}
+                                        onCheckedChange={_ => field.handleChange(!field.state.value)}
+                                        className="border-border"
+                                    />
+                                </div>
+                            )}
+                        </form.Field>
+                        <Card className="p-5">
+                            <div className="flex items-center gap-2 mb-4">
+                                <FileType />
+                                <h3 className="text-l font-semibold">Text Processing Prompt</h3>
+                            </div>
+                            <form.Field name="embeddingConfig.text_processing_prompt.system_prompt" validators={{ onChange: ({ value }) => !value ? "This field is required!" : undefined }}>
+                                {field => (
+                                    <div className="space-y-2">
+                                        <Label htmlFor={field.name}>System Prompt</Label>
+                                        <Input
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={e => field.handleChange(e.target.value)}
+                                            placeholder="System Prompt"
+                                            className="border-border"
+                                        />
+                                    </div>
+                                )}
+                            </form.Field>
+                            <form.Field name="embeddingConfig.text_processing_prompt.user_prompt" validators={{ onChange: ({ value }) => !value ? "This field is required!" : undefined }}>
+                                {field => (
+                                    <div className="space-y-2">
+                                        <Label htmlFor={field.name}>User Prompt</Label>
+                                        <Input
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={e => field.handleChange(e.target.value)}
+                                            placeholder="User Prompt"
+                                            className="border-border"
+                                        />
+                                    </div>
+                                )}
+                            </form.Field>
+                        </Card>
+                        <Card className="p-5">
+                            <div className="flex items-center gap-2 mb-4">
+                                <FileImage />
+                                <h3 className="text-l font-semibold">Image Processing Prompt</h3>
+                            </div>
+                            <form.Field name="embeddingConfig.image_processing_prompt.system_prompt" validators={{ onChange: ({ value }) => !value ? "This field is required!" : undefined }}>
+                                {field => (
+                                    <div className="space-y-2">
+                                        <Label htmlFor={field.name}>System Prompt</Label>
+                                        <Input
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={e => field.handleChange(e.target.value)}
+                                            placeholder="System Prompt"
+                                            className="border-border"
+                                        />
+                                    </div>
+                                )}
+                            </form.Field>
+                            <form.Field name="embeddingConfig.image_processing_prompt.user_prompt" validators={{ onChange: ({ value }) => !value ? "This field is required!" : undefined }}>
+                                {field => (
+                                    <div className="space-y-2">
+                                        <Label htmlFor={field.name}>User Prompt</Label>
+                                        <Input
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={e => field.handleChange(e.target.value)}
+                                            placeholder="User Prompt"
+                                            className="border-border"
+                                        />
+                                    </div>
+                                )}
+                            </form.Field>
+                        </Card>
+                        <Card className="p-5">
+                            <div className="flex items-center gap-2 mb-4">
+                                <FileImage />
+                                <h3 className="text-l font-semibold">Default Processing Prompt </h3>
+                            </div>
+                            <form.Field name="embeddingConfig.default_processing_prompt.system_prompt" validators={{ onChange: ({ value }) => !value ? "This field is required!" : undefined }}>
+                                {field => (
+                                    <div className="space-y-2">
+                                        <Label htmlFor={field.name}>System Prompt</Label>
+                                        <Input
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={e => field.handleChange(e.target.value)}
+                                            placeholder="System Prompt"
+                                            className="border-border"
+                                        />
+                                    </div>
+                                )}
+                            </form.Field>
+                            <form.Field name="embeddingConfig.default_processing_prompt.user_prompt" validators={{ onChange: ({ value }) => !value ? "This field is required!" : undefined }}>
+                                {field => (
+                                    <div className="space-y-2">
+                                        <Label htmlFor={field.name}>User Prompt</Label>
+                                        <Input
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={e => field.handleChange(e.target.value)}
+                                            placeholder="User Prompt"
+                                            className="border-border"
+                                        />
+                                    </div>
+                                )}
+                            </form.Field>
+                        </Card>
+                        <Card className="p-5">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Search />
+                                <h3 className="text-l font-semibold">Search Prompt </h3>
+                            </div>
+                            <form.Field name="embeddingConfig.search_prompt.system_prompt" validators={{ onChange: ({ value }) => !value ? "This field is required!" : undefined }}>
+                                {field => (
+                                    <div className="space-y-2">
+                                        <Label htmlFor={field.name}>System Prompt</Label>
+                                        <Input
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={e => field.handleChange(e.target.value)}
+                                            placeholder="System Prompt"
+                                            className="border-border"
+                                        />
+                                    </div>
+                                )}
+                            </form.Field>
+                            <form.Field name="embeddingConfig.search_prompt.user_prompt" validators={{ onChange: ({ value }) => !value ? "This field is required!" : undefined }}>
+                                {field => (
+                                    <div className="space-y-2">
+                                        <Label htmlFor={field.name}>User Prompt</Label>
+                                        <Input
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={e => field.handleChange(e.target.value)}
+                                            placeholder="User Prompt"
+                                            className="border-border"
+                                        />
+                                    </div>
+                                )}
+                            </form.Field>
+                        </Card>
                     </div>
                     <form.Subscribe
                         selector={state => [state.canSubmit, state.isSubmitting]}
