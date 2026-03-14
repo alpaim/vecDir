@@ -2,8 +2,8 @@ pub use anyhow::Context;
 use anyhow::{Ok, Result};
 
 use crate::{
-    ai::AI,
-    database::{self, models::VectorSearchResult, DbPool},
+    ai::{vecbox::VecboxClient, AI},
+    database::{self, models::EmbeddingBackendType, models::VectorSearchResult, DbPool},
 };
 
 pub async fn search_by_emdedding(
@@ -16,24 +16,41 @@ pub async fn search_by_emdedding(
 
     let embedding_config = space.embedding_config.0;
 
-    let ai_client = AI::new(&embedding_config.api_base_url, &embedding_config.api_key)
-        .context("failed to create openai client")?;
+    let embedding = match embedding_config.backend {
+        EmbeddingBackendType::VecBox => {
+            let vecbox_client = VecboxClient::new(&embedding_config.api_base_url, &embedding_config.model)
+                .context("failed to create vecbox client")?;
+            
+            let raw_embedding = vecbox_client
+                .create_text_embedding(&query)
+                .await
+                .context("failed to get vecbox embedding")?;
+            
+            vecbox_client
+                .prepare_matroshka(raw_embedding, 768)
+                .context("failed to prepare matroshka embedding")?
+        }
+        EmbeddingBackendType::OpenAICompat => {
+            let ai_client = AI::new(&embedding_config.api_base_url, &embedding_config.api_key)
+                .context("failed to create openai client")?;
 
-    let embedding_response = ai_client
-        .create_embedding(query, embedding_config.model)
-        .await
-        .context("failed to get embedding response")?;
+            let embedding_response = ai_client
+                .create_embedding(query, embedding_config.model.clone())
+                .await
+                .context("failed to get embedding response")?;
 
-    let embedding_raw = embedding_response
-        .data
-        .first()
-        .context("failed to get embedding from embedding response")?
-        .embedding
-        .clone();
+            let embedding_raw = embedding_response
+                .data
+                .first()
+                .context("failed to get embedding from embedding response")?
+                .embedding
+                .clone();
 
-    let embedding = ai_client
-        .prepare_matroshka(embedding_raw, 768)
-        .context("failed to prepare embedding")?;
+            ai_client
+                .prepare_matroshka(embedding_raw, 768)
+                .context("failed to prepare embedding")?
+        }
+    };
 
     let search_response = database::chunks::search_similar_chunks(db, space_id, embedding, limit)
         .await
