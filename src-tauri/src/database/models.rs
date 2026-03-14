@@ -1,9 +1,9 @@
 use specta::Type;
 
-use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
+use sqlx::FromRow;
 
 // APP CONFIG
 #[derive(Debug, Serialize, Deserialize, Clone, Type)]
@@ -16,21 +16,25 @@ pub struct AppConfig {
     #[serde(default = "default_parallelism")]
     #[specta(type = i32)]
     pub indexer_parallelism: usize, // How many files vecDir needs to index in parallel (2-4)
-    
+
     // AI Settings (Global defaults)
     pub default_openai_url: Option<String>,
 }
 
 // Default values
-fn default_theme() -> String { "system".to_string() }
-fn default_parallelism() -> usize { 2 }
+fn default_theme() -> String {
+    "system".to_string()
+}
+fn default_parallelism() -> usize {
+    2
+}
 
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
             theme: default_theme(),
             indexer_parallelism: default_parallelism(),
-            default_openai_url: None
+            default_openai_url: None,
         }
     }
 }
@@ -49,20 +53,31 @@ pub struct LLMConfig {
     pub api_key: String,
 
     pub model: String,
-    
+
     pub text_processing_prompt: AIPrompt,
     pub image_processing_prompt: AIPrompt,
     pub default_processing_prompt: AIPrompt,
 }
 
+// EMBEDDING BACKEND TYPE
+
+#[derive(Debug, Serialize, Deserialize, Clone, Type, PartialEq, Default)]
+pub enum EmbeddingBackendType {
+    #[default]
+    #[serde(rename = "openai_compat")]
+    OpenAICompat,
+    #[serde(rename = "vecbox")]
+    VecBox,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Type)]
 pub struct EmbeddingConfig {
+    #[serde(default)]
+    pub backend: EmbeddingBackendType,
     pub api_base_url: String,
     pub api_key: String,
 
     pub model: String,
-
-    pub dimensions: i32,
 }
 
 // SPACES
@@ -77,7 +92,7 @@ pub struct Space {
     #[specta(type = EmbeddingConfig)]
     pub embedding_config: Json<EmbeddingConfig>,
 
-    #[specta(type = LLMConfig)] 
+    #[specta(type = LLMConfig)]
     pub llm_config: Json<LLMConfig>,
 
     pub created_at: DateTime<Utc>,
@@ -112,7 +127,7 @@ pub struct FileMetadata {
     pub modified_at_fs: DateTime<Utc>,
     pub last_indexed_at: Option<DateTime<Utc>>,
     pub content_hash: Option<String>,
-    
+
     pub indexing_status: String,
     pub indexing_error_message: Option<String>,
 }
@@ -127,7 +142,7 @@ pub struct FileChunk {
     pub content: String,
 
     pub start_char_idx: Option<i32>,
-    pub end_char_idx: Option<i32>
+    pub end_char_idx: Option<i32>,
 }
 
 // VECTOR SEARCH RESULT

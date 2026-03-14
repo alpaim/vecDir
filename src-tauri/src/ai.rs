@@ -16,9 +16,11 @@ use async_openai::{
     Client,
 };
 use base64::Engine;
+use serde::{Deserialize, Serialize};
 
 pub mod embedding;
 pub mod llm;
+pub mod vecbox;
 
 #[derive(Clone)]
 pub struct AI {
