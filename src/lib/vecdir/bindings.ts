@@ -111,6 +111,14 @@ async searchByEmdedding(spaceId: number, query: string, limit: number) : Promise
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async revealInExplorer(path: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reveal_in_explorer", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 

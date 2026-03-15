@@ -9,6 +9,7 @@ use crate::{ai::AI, state::AppState};
 mod ai;
 mod database;
 mod indexer;
+mod os;
 mod search;
 mod state;
 mod status;
@@ -42,6 +43,8 @@ pub fn run() {
             indexer::commands::process_space,
             // SEARCH
             search::commands::search_by_emdedding,
+            // OS
+            os::commands::reveal_in_explorer,
         ])
         .events(collect_events![
             status::events::BackendReadyEvent,
@@ -58,9 +61,12 @@ pub fn run() {
         .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
