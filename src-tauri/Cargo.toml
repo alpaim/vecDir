@@ -1,6 +1,6 @@
 [package]
 name = "vecdir"
-version = "0.1.1"
+version = "0.2.0"
 description = "semantic file search"
 authors = ["alpaim"]
 edition = "2021"
