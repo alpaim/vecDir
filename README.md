@@ -4,7 +4,7 @@
 
 > **Vectorize your directories for better search**
 
-🚀 **NEW: Multimodal Embeddings Support** - VecDir now supports direct multimodal embeddings thanks to [vecBox](https://github.com/alpaim/vecbox) and [vecbox-lib](https://github.com/alpaim/vecbox-lib)! Currently supports **Qwen3-VL-Embedding** models (like [Qwen3-VL-Embedding-2B](https://huggingface.co/Qwen/Qwen3-VL-Embedding-2B)) and [quantized versions](https://huggingface.co/alpaim/Qwen3-VL-Embedding-2B-GGUF-vecBox) specially optimized for this project. Index and search both text and images using native multimodal embeddings without separate vision-language models.
+🚀 **NEW: Multimodal Embeddings Support** - VecDir now supports direct multimodal embeddings thanks to [vecBox](https://github.com/alpaim/vecbox) and [vecbox-core](https://github.com/alpaim/vecbox-core)! Currently supports **Qwen3-VL-Embedding** models (like [Qwen3-VL-Embedding-2B](https://huggingface.co/Qwen/Qwen3-VL-Embedding-2B)) and [quantized versions](https://huggingface.co/alpaim/Qwen3-VL-Embedding-2B-GGUF-vecBox) specially optimized for this project. Index and search both text and images using native multimodal embeddings without separate vision-language models.
 
 A local-only, very lightweight (**~10MB**), privacy-minded desktop application for semantic/similarity file indexing and retrieval. Unlike traditional search tools that look for exact keyword matches, this tool uses vector embeddings to understand the *meaning* of your queries.
 
@@ -35,7 +35,7 @@ This is not another Electron-based AI tool that burns your RAM and sends data to
 ## What's New Since v0.1.1
 
 ### Multimodal Embeddings with VecBox
-The latest development brings native **multimodal embedding support** through integration with [vecBox](https://github.com/alpaim/vecbox) and [vecbox-lib](https://github.com/alpaim/vecbox-lib):
+The latest development brings native **multimodal embedding support** through integration with [vecBox](https://github.com/alpaim/vecbox) and [vecbox-core](https://github.com/alpaim/vecbox-core):
 
 - **Direct multimodal embeddings**: Generate embeddings for both text and images using a single unified model
 - **Alternative to vision-language models**: Instead of using separate VLM + embedding pipeline, vecBox provides direct multimodal understanding
@@ -87,7 +87,7 @@ VecDir now supports two distinct embedding backends, giving users flexibility in
 
 * **OpenAI-Compatible Backend (`openai_compat`)**: The traditional two-stage pipeline using Vision-Language Models (VLMs) to generate text descriptions, followed by text embedding models to create vectors. Best for setups with existing OpenAI-compatible endpoints (Ollama, LM Studio, vLLM).
 
-* **VecBox Backend (`vecbox`)**: A native multimodal embedding backend using [vecBox](https://github.com/alpaim/vecbox) and [vecbox-lib](https://github.com/alpaim/vecbox-lib). This backend skips the description generation step entirely and creates embeddings directly from images and text in a single pass. Currently supports **Qwen3-VL-Embedding** models. Advantages include:
+* **VecBox Backend (`vecbox`)**: A native multimodal embedding backend using [vecBox](https://github.com/alpaim/vecbox) and [vecbox-core](https://github.com/alpaim/vecbox-core). This backend skips the description generation step entirely and creates embeddings directly from images and text in a single pass. Currently supports **Qwen3-VL-Embedding** models. Advantages include:
     * **Simplified Pipeline**: No need for separate VLM and embedding models
     * **True Multimodal**: Native understanding of visual content without text intermediaries
     * **Lower Latency**: Single API call per file instead of two-stage processing
