@@ -4,6 +4,8 @@
 
 > **Vectorize your directories for better search**
 
+🚀 **NEW: Multimodal Embeddings Support** - VecDir now supports direct multimodal embeddings thanks to [vecBox](https://github.com/alpaim/vecbox) and [vecbox-lib](https://github.com/alpaim/vecbox-lib)! Currently supports **Qwen3-VL-Embedding** models (like [Qwen3-VL-Embedding-2B](https://huggingface.co/Qwen/Qwen3-VL-Embedding-2B)) and [quantized versions](https://huggingface.co/alpaim/Qwen3-VL-Embedding-2B-GGUF-vecBox) specially optimized for this project. Index and search both text and images using native multimodal embeddings without separate vision-language models.
+
 A local-only, very lightweight (**~10MB**), privacy-minded desktop application for semantic/similarity file indexing and retrieval. Unlike traditional search tools that look for exact keyword matches, this tool uses vector embeddings to understand the *meaning* of your queries.
 
 Built for privacy and performance using **Tauri**, **Rust**, **SQLite-Vec** and many other great technologies.
@@ -29,6 +31,22 @@ This is not another Electron-based AI tool that burns your RAM and sends data to
 **Multi-Space Architecture**: Create isolated spaces with different configurations. Use a vision-heavy model with custom prompts for your photo library, and a code-specialized model for your repositories. Each space maintains its own index, embeddings, and AI config.
 
 **Provider Agnostic**: The system does not lock you into OpenAI, Anthropic, or any specific vendor. Point it to LM Studio, Ollama, vLLM, or your private cloud endpoint. Full control over prompts and model selection.
+
+## What's New Since v0.1.1
+
+### Multimodal Embeddings with VecBox
+The latest development brings native **multimodal embedding support** through integration with [vecBox](https://github.com/alpaim/vecbox) and [vecbox-lib](https://github.com/alpaim/vecbox-lib):
+
+- **Direct multimodal embeddings**: Generate embeddings for both text and images using a single unified model
+- **Alternative to vision-language models**: Instead of using separate VLM + embedding pipeline, vecBox provides direct multimodal understanding
+- **Simplified pipeline**: No need to generate text descriptions first - embed images directly
+- **Two backend modes**: Choose between traditional `openai_compat` (VLM + embeddings) or `vecbox` (direct multimodal)
+
+### Recent Changes
+- ✅ VecBox backend integration for native multimodal embeddings
+- ✅ Updated settings UI to configure vecBox backend
+- ✅ Support for direct image indexing without VLM preprocessing
+- 🐛 Fixed crash when opening File items in the header
 
 ## Tech Stack
 ### Core & Backend
@@ -64,7 +82,20 @@ The system is architected to be completely agnostic regarding the AI backend. It
 
 * **Granular Prompt Engineering**: Prompts are not embedded in the code. They are stored as mutable configurations within the database. The user has full control over the `system_prompt` and `user_prompt` for different pipelines (Text Processing vs. Image Processing). This exposes the RAG strategy to the user, allowing them to optimize how files are summarized and indexed based on their specific domain requirement.
 
-### 3. Resource Efficiency
+### 3. Dual Backend Architecture
+VecDir now supports two distinct embedding backends, giving users flexibility in how they process and index content:
+
+* **OpenAI-Compatible Backend (`openai_compat`)**: The traditional two-stage pipeline using Vision-Language Models (VLMs) to generate text descriptions, followed by text embedding models to create vectors. Best for setups with existing OpenAI-compatible endpoints (Ollama, LM Studio, vLLM).
+
+* **VecBox Backend (`vecbox`)**: A native multimodal embedding backend using [vecBox](https://github.com/alpaim/vecbox) and [vecbox-lib](https://github.com/alpaim/vecbox-lib). This backend skips the description generation step entirely and creates embeddings directly from images and text in a single pass. Currently supports **Qwen3-VL-Embedding** models. Advantages include:
+    * **Simplified Pipeline**: No need for separate VLM and embedding models
+    * **True Multimodal**: Native understanding of visual content without text intermediaries
+    * **Lower Latency**: Single API call per file instead of two-stage processing
+    * **Better for Images**: Direct visual embeddings often capture nuances that text descriptions miss
+
+Users can choose the backend per Space, allowing different indexing strategies for different content types.
+
+### 4. Resource Efficiency
 All AI Apps are heavy. Usually. Even if you are not inference locally. But why?
 
 The vast majority of Desktop apps are built over Electron. Really great technology, but it makes apps slow and heavy.
@@ -74,7 +105,7 @@ Unlike typical desktop AI assistants built on Electron, vecDir leverages the Tau
 * **Binary Size**: By utilizing the operating system's native WebView and compiling the backend to native Rust machine code, the final application distributable is approximately **~10MB**.
 * **Memory Footprint**: The application avoids the overhead of bundling a full Chromium instance. This ensures the background indexing processes and vector search operations leave maximum system resources available for the local LLMs running alongside the application.
 
-### 4. Backend and Frontend communication
+### 5. Backend and Frontend communication
 The communication is powered by Tauri commands - a wrapper functions application exports to the frontend. Specta crate generates bindings for better type-safety. Basically, the Backend is the only Source of Truth. The client is Dumb.
 
 Thanks for Rust, Tauri and Specta, the communication is made in a very elegant way, making helper wrapper functions using Tauri Command macro, and then calling it using generated bindings from the client.
@@ -88,14 +119,23 @@ The application uses the [ignore](https://crates.io/crates/ignore) crate (the pa
 * **Concurrency**: File walking and database upsert operations are handled asynchronously to prevent UI blocking.
 
 ### 2. Processing Layer; Utilizing AI
-Once files are queued, they pass through a processing logic that acts as a router based on **MIME** types. This ensures the correct model is applied to the correct data type:
+Once files are queued, they pass through a processing logic that acts as a router based on **MIME** types and the configured backend. This ensures the correct model is applied to the correct data type:
+
+**For OpenAI-Compatible Backend:**
 * **Vision Pipeline**: Image files are converted to Base64 and sent to a Vision-Language Model (Gemma, Ministral, Qwen-VL). The model executes a system prompt to describe the visual content specifically for retrieval purposes.
 * **Text Pipeline**: Code and text files are read and sent to a text-based LLM (Gemma, Mistral, Qwen) to generate a concise summary of the file's purpose and content.
-* **Error Handling**: Failed processings are logged in the database with error messages for debugging, preventing the entire batch from failing.
 * **Chunking**: Each response splits into chunks to save it in vector storage.
 
+**For VecBox Backend:**
+* **Direct Multimodal Pipeline**: Both images and text are processed directly by the multimodal embedding model without intermediate description generation. Images and text are converted to embeddings in a single pass.
+* **Unified Processing**: The same vecBox model handles all content types natively, eliminating the need for separate VLM and embedding stages.
+
+* **Error Handling**: Failed processings are logged in the database with error messages for debugging, preventing the entire batch from failing.
+
 ### 3. Vectorization & Storage
-* **Embeddings**: The generated descriptions are batched and sent to an embedding model (EmbeddingGemma, Qwen-Embedding).
+* **Embeddings (OpenAI-Compatible)**: The generated descriptions are batched and sent to an embedding model (EmbeddingGemma, Qwen-Embedding).
+
+* **Embeddings (VecBox)**: Content is directly embedded using the multimodal vecBox model without text intermediaries. Supports both image and text inputs natively.
 
 * **Matroshka Embeddings**: The system implements Matroshka Representation Learning logic to truncate vectors to 768 dimensions if necessary, optimizing storage size without significant precision loss.
 
