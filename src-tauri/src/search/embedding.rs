@@ -1,5 +1,6 @@
 pub use anyhow::Context;
 use anyhow::{Ok, Result};
+use std::collections::HashMap;
 
 use crate::{
     ai::{vecbox::VecboxClient, AI},
@@ -52,9 +53,32 @@ pub async fn search_by_emdedding(
         }
     };
 
-    let search_response = database::chunks::search_similar_chunks(db, space_id, embedding, limit)
+    // Temp fix to oversample for better results
+    // Needs to be adjusted according to config and heuristic 
+    let oversample_limit = limit * 100;
+    
+    let chunks = database::chunks::search_similar_chunks(db, space_id, embedding, oversample_limit)
         .await
-        .context("failed to get files by ids in command")?;
+        .context("failed to search similar chunks")?;
 
-    Ok(search_response)
+    let mut file_map: HashMap<i32, VectorSearchResult> = HashMap::new();
+    
+    for chunk in chunks {
+        file_map
+            .entry(chunk.file_id)
+            .and_modify(|existing| {
+                if chunk.distance < existing.distance {
+                    *existing = chunk.clone();
+                }
+            })
+            .or_insert(chunk);
+    }
+
+    let mut results: Vec<VectorSearchResult> = file_map.into_values().collect();
+    results.sort_by(|a, b| {
+        a.distance.partial_cmp(&b.distance).unwrap_or(std::cmp::Ordering::Equal)
+    });
+    results.truncate(limit as usize);
+
+    Ok(results)
 }

@@ -146,7 +146,7 @@ pub struct FileChunk {
 }
 
 // VECTOR SEARCH RESULT
-#[derive(Debug, FromRow, Serialize, Type)]
+#[derive(Debug, FromRow, Serialize, Type, Clone)]
 pub struct VectorSearchResult {
     pub chunk_id: i32,
     pub content: String,
