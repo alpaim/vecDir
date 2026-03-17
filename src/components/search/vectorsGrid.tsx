@@ -42,9 +42,18 @@ export function VectorsSearchGrid({ results }: { results: VectorSearchResult[] }
         return <div className="text-center p-10 text-muted-foreground">No Results</div>;
     }
 
+    const uniqueResults = Array.from(
+        results.reduce((acc, result) => {
+            if (!acc.has(result.file_id)) {
+                acc.set(result.file_id, result);
+            }
+            return acc;
+        }, new Map<number, VectorSearchResult>()).values(),
+    );
+
     return (
         <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 px-4 pb-4">
-            {results.map(result => (
+            {uniqueResults.map(result => (
                 <ContextMenu key={result.file_id}>
                     <ContextMenuTrigger asChild>
                         <div
@@ -63,14 +72,16 @@ export function VectorsSearchGrid({ results }: { results: VectorSearchResult[] }
                                 </Badge>
                             </div>
 
-                            <div className="rounded-lg overflow-hidden bg-background/50">
-                                <img
-                                    src={getImage(result.absolute_path)}
-                                    alt={result.filename}
-                                    className="w-full h-auto object-cover block hover:scale-105 transition-transform duration-300"
-                                    loading="lazy"
-                                />
-                            </div>
+                            {isImageFile(result.absolute_path) && (
+                                <div className="rounded-lg overflow-hidden bg-background/50">
+                                    <img
+                                        src={getImage(result.absolute_path)}
+                                        alt={result.filename}
+                                        className="w-full h-auto object-cover block hover:scale-105 transition-transform duration-300"
+                                        loading="lazy"
+                                    />
+                                </div>
+                            )}
                         </div>
                     </ContextMenuTrigger>
                     <ContextMenuContent>
