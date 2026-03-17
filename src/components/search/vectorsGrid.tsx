@@ -63,14 +63,16 @@ export function VectorsSearchGrid({ results }: { results: VectorSearchResult[] }
                                 </Badge>
                             </div>
 
-                            <div className="rounded-lg overflow-hidden bg-background/50">
-                                <img
-                                    src={getImage(result.absolute_path)}
-                                    alt={result.filename}
-                                    className="w-full h-auto object-cover block hover:scale-105 transition-transform duration-300"
-                                    loading="lazy"
-                                />
-                            </div>
+                            {isImageFile(result.absolute_path) && (
+                                <div className="rounded-lg overflow-hidden bg-background/50">
+                                    <img
+                                        src={getImage(result.absolute_path)}
+                                        alt={result.filename}
+                                        className="w-full h-auto object-cover block hover:scale-105 transition-transform duration-300"
+                                        loading="lazy"
+                                    />
+                                </div>
+                            )}
                         </div>
                     </ContextMenuTrigger>
                     <ContextMenuContent>
