@@ -42,18 +42,9 @@ export function VectorsSearchGrid({ results }: { results: VectorSearchResult[] }
         return <div className="text-center p-10 text-muted-foreground">No Results</div>;
     }
 
-    const uniqueResults = Array.from(
-        results.reduce((acc, result) => {
-            if (!acc.has(result.file_id)) {
-                acc.set(result.file_id, result);
-            }
-            return acc;
-        }, new Map<number, VectorSearchResult>()).values(),
-    );
-
     return (
         <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 px-4 pb-4">
-            {uniqueResults.map(result => (
+            {results.map(result => (
                 <ContextMenu key={result.file_id}>
                     <ContextMenuTrigger asChild>
                         <div
