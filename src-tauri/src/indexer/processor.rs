@@ -7,10 +7,7 @@ use crate::{
     ai::{vecbox::VecboxClient, AI},
     database::{
         chunks::{add_chunks_batch, AddFileChunk},
-        files::{
-            get_pending_files_for_space, mark_file_as_indexed_batch,
-            MarkFileAsIndexed,
-        },
+        files::{get_pending_files_for_space, mark_file_as_indexed_batch, MarkFileAsIndexed},
         models::{EmbeddingBackendType, LLMConfig},
         spaces::get_space_by_id,
         DbPool,
@@ -31,13 +28,17 @@ async fn process_image_vecbox(
         .await
         .context("failed to create vecbox image embedding")?;
 
+    let truncated = vecbox_client
+        .prepare_matroshka(embedding, 768)
+        .context("failed to prepare matroshka")?;
+
     let filename = std::path::Path::new(image_path)
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("image")
         .to_string();
 
-    Ok((embedding, format!("image: {}", filename)))
+    Ok((truncated, format!("image: {}", filename)))
 }
 
 async fn process_text_vecbox(
@@ -122,7 +123,15 @@ pub async fn process_space(
             process_space_vecbox(app_handle, pool, space_id, limit, &embedding_config).await
         }
         EmbeddingBackendType::OpenAICompat => {
-            process_space_standard(app_handle, pool, space_id, limit, &llm_config, &embedding_config).await
+            process_space_standard(
+                app_handle,
+                pool,
+                space_id,
+                limit,
+                &llm_config,
+                &embedding_config,
+            )
+            .await
         }
     }
 }
@@ -156,7 +165,20 @@ async fn process_space_vecbox(
         let mime_type = guess.first_or_octet_stream();
 
         let result = match mime_type.type_() {
-            mime::IMAGE => process_image_vecbox(file_path, &vecbox_client).await.map(|(emb, desc)| vec![(TextChunk { content: desc, start_char_idx: 0, end_char_idx: 0 }, emb)]),
+            mime::IMAGE => {
+                process_image_vecbox(file_path, &vecbox_client)
+                    .await
+                    .map(|(emb, desc)| {
+                        vec![(
+                            TextChunk {
+                                content: desc,
+                                start_char_idx: 0,
+                                end_char_idx: 0,
+                            },
+                            emb,
+                        )]
+                    })
+            }
             _ => process_text_vecbox(file_path, &vecbox_client).await,
         };
 
