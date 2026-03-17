@@ -29,8 +29,9 @@ pub fn chunk_text(text: &str) -> Vec<TextChunk> {
         let end_idx = start_idx + chunk_content.len();
 
         let content = if i > 0 && !chunks.is_empty() {
-            let overlap_start = chunks[i - 1].content.len().saturating_sub(OVERLAP_CHARS);
-            let overlap_text = &chunks[i - 1].content[overlap_start..];
+            let overlap_chars: Vec<char> = chunks[i - 1].content.chars().collect();
+            let overlap_start_idx = overlap_chars.len().saturating_sub(OVERLAP_CHARS);
+            let overlap_text: String = overlap_chars[overlap_start_idx..].iter().collect();
             format!("{}{}", overlap_text, chunk_content)
         } else {
             chunk_content.to_string()
