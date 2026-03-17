@@ -179,7 +179,8 @@ async fn process_space_vecbox(
                         )]
                     })
             }
-            _ => process_text_vecbox(file_path, &vecbox_client).await,
+            mime::TEXT => process_text_vecbox(file_path, &vecbox_client).await,
+            _ => todo!(),
         };
 
         match result {
@@ -329,7 +330,7 @@ async fn process_space_standard(
                     continue;
                 }
             }
-        } else {
+        } else if mime_type.type_() == mime::TEXT {
             let content = tokio::fs::read_to_string(file_path)
                 .await
                 .unwrap_or_default();
@@ -383,8 +384,9 @@ async fn process_space_standard(
                 file_id,
                 description: None,
             });
+        } else {
+            todo!()
         }
-
         StatusEvent {
             status: StatusType::Processing,
             message: Some("Processing Space".to_string()),
