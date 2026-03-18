@@ -43,36 +43,31 @@ export function VectorsSearchGrid({ results }: { results: VectorSearchResult[] }
     }
 
     return (
-        <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4 px-4 pb-4">
-            {results.map(result => (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3 p-4">{results.map(result => (
                 <ContextMenu key={result.file_id}>
                     <ContextMenuTrigger asChild>
                         <div
-                            className="break-inside-avoid mb-4 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer border border-transparent hover:border-border/50 group"
+                            className="aspect-square rounded-xl bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer border border-transparent hover:border-border/50 group overflow-hidden relative"
                             onClick={() => handleOpen(result.absolute_path)}
                         >
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="font-medium text-foreground flex items-center gap-2 overflow-hidden min-w-0">
-                                    <span className="font-mono text-xs truncate opacity-70 group-hover:opacity-100 transition-opacity" title={result.filename}>
-                                        {result.filename}
-                                    </span>
-                                </div>
-                                <Badge variant="outline" className="text-[10px] px-1.5 h-5 text-primary border-primary/30 shrink-0">
+                            {isImageFile(result.absolute_path) && (
+                                <img
+                                    src={getImage(result.absolute_path)}
+                                    alt={result.filename}
+                                    className="w-full h-full object-cover block group-hover:scale-105 transition-transform duration-300"
+                                    loading="lazy"
+                                />
+                            )}
+
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2">
+                                <span className="font-mono text-[10px] text-white truncate" title={result.filename}>
+                                    {result.filename}
+                                </span>
+                                <Badge variant="outline" className="text-[9px] px-1 h-4 text-white border-white/30 w-fit mt-1">
                                     {(100 - result.distance * 100).toFixed(0)}
                                     %
                                 </Badge>
                             </div>
-
-                            {isImageFile(result.absolute_path) && (
-                                <div className="rounded-lg overflow-hidden bg-background/50">
-                                    <img
-                                        src={getImage(result.absolute_path)}
-                                        alt={result.filename}
-                                        className="w-full h-auto object-cover block hover:scale-105 transition-transform duration-300"
-                                        loading="lazy"
-                                    />
-                                </div>
-                            )}
                         </div>
                     </ContextMenuTrigger>
                     <ContextMenuContent>
