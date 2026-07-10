@@ -3,7 +3,7 @@ use anyhow::{Ok, Result};
 use std::collections::HashMap;
 
 use crate::{
-    ai::{vecbox::VecboxClient, AI},
+    ai::{llamacpp::LlamaCppClient, vecbox::VecboxClient, AI},
     database::{self, models::EmbeddingBackendType, models::VectorSearchResult, DbPool},
 };
 
@@ -30,6 +30,29 @@ pub async fn search_by_emdedding(
             vecbox_client
                 .prepare_matroshka(raw_embedding, 768)
                 .context("failed to prepare matroshka embedding")?
+        }
+        EmbeddingBackendType::LlamaCpp => {
+            let media_marker = if embedding_config.fetch_marker_from_server.unwrap_or(false) {
+                LlamaCppClient::fetch_media_marker(&embedding_config.api_base_url)
+                    .await
+                    .context("failed to fetch media marker from llama.cpp server")?
+            } else {
+                embedding_config
+                    .media_marker
+                    .clone()
+                    .unwrap_or_else(|| "<__media__>".to_string())
+            };
+
+            let llamacpp_client = LlamaCppClient::new(
+                &embedding_config.api_base_url,
+                &embedding_config.model,
+                Some(media_marker),
+            );
+
+            llamacpp_client
+                .create_text_embedding(&query)
+                .await
+                .context("failed to get llamacpp embedding")?
         }
         EmbeddingBackendType::OpenAICompat => {
             let ai_client = AI::new(&embedding_config.api_base_url, &embedding_config.api_key)

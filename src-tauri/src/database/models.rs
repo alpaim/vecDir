@@ -68,6 +68,8 @@ pub enum EmbeddingBackendType {
     OpenAICompat,
     #[serde(rename = "vecbox")]
     VecBox,
+    #[serde(rename = "llamacpp")]
+    LlamaCpp,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Type)]
@@ -78,6 +80,15 @@ pub struct EmbeddingConfig {
     pub api_key: String,
 
     pub model: String,
+
+    #[serde(default)]
+    pub media_marker: Option<String>,
+
+    #[serde(default)]
+    pub image_processing_prompt: Option<AIPrompt>,
+
+    #[serde(default)]
+    pub fetch_marker_from_server: Option<bool>,
 }
 
 // SPACES
