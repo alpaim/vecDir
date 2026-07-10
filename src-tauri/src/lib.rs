@@ -37,6 +37,7 @@ pub fn run() {
             database::commands::add_root,
             database::commands::delete_root,
             database::commands::get_roots_by_space_id,
+            database::commands::delete_file_from_space,
             database::commands::get_files_by_ids,
             // INDEXER
             indexer::commands::index_space,

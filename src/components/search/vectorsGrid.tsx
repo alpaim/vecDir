@@ -1,6 +1,7 @@
 import type { VectorSearchResult } from "@/lib/vecdir/bindings";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { Copy, FolderOpen, Info, RefreshCw, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import {
     ContextMenu,
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/context-menu";
 import { copyImageToClipboard } from "@/lib/vecdir/files/copyImageToClipboard";
 import { copyPathToClipboard } from "@/lib/vecdir/files/copyPathToClipboard";
+import { deleteFileFromSpace } from "@/lib/vecdir/files/deleteFileFromSpace";
 import { isImageFile } from "@/lib/vecdir/files/isImageFile";
 import { openFile } from "@/lib/vecdir/files/openFile";
 import { revealInExplorer } from "@/lib/vecdir/files/revealInExplorer";
@@ -37,13 +39,35 @@ function handleCopyImage(path: string) {
     copyImageToClipboard(path);
 }
 
-export function VectorsSearchGrid({ results }: { results: VectorSearchResult[] }) {
+export function VectorsSearchGrid({ results, spaceId, onFileDeleted }: {
+    results: VectorSearchResult[];
+    spaceId: number;
+    onFileDeleted: (fileId: number) => void;
+}) {
+    async function handleDelete(fileId: number) {
+        try {
+            const deleted = await deleteFileFromSpace(spaceId, fileId);
+
+            if (!deleted) {
+                toast.error("Unable to remove file from Space");
+                return;
+            }
+
+            onFileDeleted(fileId);
+            toast("File removed from Space");
+        }
+        catch {
+            toast.error("Unable to remove file from Space");
+        }
+    }
+
     if (!results || results.length === 0) {
         return <div className="text-center p-10 text-muted-foreground">No Results</div>;
     }
 
     return (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3 p-4">{results.map(result => (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3 p-4">
+            {results.map(result => (
                 <ContextMenu key={result.file_id}>
                     <ContextMenuTrigger asChild>
                         <div
@@ -105,7 +129,7 @@ export function VectorsSearchGrid({ results }: { results: VectorSearchResult[] }
                             Rescan
                         </ContextMenuItem>
                         <ContextMenuSeparator />
-                        <ContextMenuItem variant="destructive">
+                        <ContextMenuItem variant="destructive" onClick={() => handleDelete(result.file_id)}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete from Space
                         </ContextMenuItem>

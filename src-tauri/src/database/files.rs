@@ -29,7 +29,7 @@ pub async fn upsert_file(pool: &DbPool, file: UpsertFile) -> Result<()> {
         ON CONFLICT(root_id, absolute_path) DO UPDATE SET
             file_size = excluded.file_size,
             modified_at_fs = excluded.modified_at_fs,
-            indexing_status = CASE 
+            indexing_status = CASE
                 WHEN files_metadata.modified_at_fs != excluded.modified_at_fs THEN 'pending'
                 ELSE files_metadata.indexing_status
             END
@@ -53,12 +53,12 @@ pub async fn upsert_files_batch(pool: &DbPool, files: UpsertFilesBatch) -> Resul
     for chunk in files.chunks(BATCH_SIZE) {
         let mut query_builder = QueryBuilder::new(
             "INSERT INTO files_metadata (
-                root_id, 
-                absolute_path, 
-                filename, 
-                file_extension, 
-                file_size, 
-                modified_at_fs, 
+                root_id,
+                absolute_path,
+                filename,
+                file_extension,
+                file_size,
+                modified_at_fs,
                 indexing_status
             ) ",
         );
@@ -76,10 +76,10 @@ pub async fn upsert_files_batch(pool: &DbPool, files: UpsertFilesBatch) -> Resul
 
         // upsert logic on conflict in raw SQL
         query_builder.push(
-            " ON CONFLICT(root_id, absolute_path) DO UPDATE SET 
+            " ON CONFLICT(root_id, absolute_path) DO UPDATE SET
                 file_size = excluded.file_size,
                 modified_at_fs = excluded.modified_at_fs,
-                indexing_status = CASE 
+                indexing_status = CASE
                     WHEN files_metadata.modified_at_fs != excluded.modified_at_fs THEN 'pending'
                     ELSE files_metadata.indexing_status
                 END",
@@ -99,9 +99,9 @@ pub async fn mark_file_as_indexed(
 ) -> Result<()> {
     sqlx::query(
         r#"
-        UPDATE files_metadata 
-        SET 
-            indexing_status = 'indexed', 
+        UPDATE files_metadata
+        SET
+            indexing_status = 'indexed',
             last_indexed_at = CURRENT_TIMESTAMP,
             description = ?
         WHERE id = ?
@@ -137,9 +137,9 @@ pub async fn mark_file_as_indexed_batch(
             .context("failed to begin batch transaction")?;
 
         let query_str = r#"
-            UPDATE files_metadata 
-            SET 
-                indexing_status = 'indexed', 
+            UPDATE files_metadata
+            SET
+                indexing_status = 'indexed',
                 last_indexed_at = CURRENT_TIMESTAMP,
                 description = ?
             WHERE id = ?
@@ -183,7 +183,7 @@ pub async fn get_pending_files_for_space(
         r#"
         SELECT f.* FROM files_metadata f
         JOIN indexed_roots r ON f.root_id = r.id
-        WHERE r.space_id = ? 
+        WHERE r.space_id = ?
           AND f.indexing_status = 'pending'
         LIMIT ?
         "#,
@@ -195,6 +195,54 @@ pub async fn get_pending_files_for_space(
     .context("failed to get pending files for space")?;
 
     Ok(res)
+}
+
+pub async fn delete_file_from_space(pool: &DbPool, space_id: i32, file_id: i32) -> Result<bool> {
+    let mut tx = pool
+        .begin()
+        .await
+        .context("failed to begin file deletion transaction")?;
+
+    sqlx::query(
+        r#"
+        DELETE FROM file_chunks
+        WHERE file_id = ?
+          AND EXISTS (
+              SELECT 1
+              FROM files_metadata f
+              JOIN indexed_roots r ON r.id = f.root_id
+              WHERE f.id = file_chunks.file_id AND r.space_id = ?
+          )
+        "#,
+    )
+    .bind(file_id)
+    .bind(space_id)
+    .execute(&mut *tx)
+    .await
+    .context("failed to delete file chunks")?;
+
+    let result = sqlx::query(
+        r#"
+        DELETE FROM files_metadata
+        WHERE id = ?
+          AND EXISTS (
+              SELECT 1
+              FROM indexed_roots r
+              WHERE r.id = files_metadata.root_id AND r.space_id = ?
+          )
+        "#,
+    )
+    .bind(file_id)
+    .bind(space_id)
+    .execute(&mut *tx)
+    .await
+    .context("failed to delete file metadata")?;
+
+    tx.commit()
+        .await
+        .context("failed to commit file deletion transaction")?;
+
+    Ok(result.rows_affected() > 0)
 }
 
 pub async fn get_files_by_ids(pool: &DbPool, ids: Vec<i32>) -> Result<Vec<FileMetadata>> {

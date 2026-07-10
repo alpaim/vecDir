@@ -46,7 +46,7 @@ export function Search({ searchQuery }: SearchParams) {
         searchVectors(spaceId, searchQuery, 20).then((result) => {
             setVectorsResult(result);
         });
-    }, [searchQuery]);
+    }, [spaceId, searchQuery]);
 
     return (
     // <div className="grid grid-cols-3 gap-6 flex-1 h-full min-h-0 w-full p-5">
@@ -60,7 +60,11 @@ export function Search({ searchQuery }: SearchParams) {
         //     <VectorsSearchColumn results={vectorsResult} />
         // </div>
         <div className="w-full h-full overflow-y-auto p-5">
-            <VectorsSearchGrid results={vectorsResult} />
+            <VectorsSearchGrid
+                results={vectorsResult}
+                spaceId={spaceId}
+                onFileDeleted={fileId => setVectorsResult(results => results.filter(result => result.file_id !== fileId))}
+            />
         </div>
     );
 }

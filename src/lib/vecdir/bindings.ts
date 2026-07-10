@@ -80,6 +80,14 @@ async getRootsBySpaceId(spaceId: number) : Promise<Result<IndexedRoot[], null>> 
     else return { status: "error", error: e  as any };
 }
 },
+async deleteFileFromSpace(spaceId: number, fileId: number) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_file_from_space", { spaceId, fileId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getFilesByIds(ids: number[]) : Promise<Result<FileMetadata[], null>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_files_by_ids", { ids }) };

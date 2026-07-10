@@ -140,6 +140,19 @@ pub async fn get_roots_by_space_id(
 
 #[tauri::command]
 #[specta::specta]
+pub async fn delete_file_from_space(
+    state: State<'_, AppState>,
+    space_id: i32,
+    file_id: i32,
+) -> Result<bool, String> {
+    database::files::delete_file_from_space(&state.db, space_id, file_id)
+        .await
+        .context("failed to delete file from space in command")
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn get_files_by_ids(
     state: State<'_, AppState>,
     ids: Vec<i32>,
