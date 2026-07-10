@@ -4,7 +4,7 @@ use tauri::AppHandle;
 use tauri_specta::Event;
 
 use crate::{
-    ai::{vecbox::VecboxClient, AI},
+    ai::{llamacpp::LlamaCppClient, vecbox::VecboxClient, AI},
     database::{
         chunks::{add_chunks_batch, AddFileChunk},
         files::{get_pending_files_for_space, mark_file_as_indexed_batch, MarkFileAsIndexed},
@@ -121,6 +121,9 @@ pub async fn process_space(
     match embedding_config.backend {
         EmbeddingBackendType::VecBox => {
             process_space_vecbox(app_handle, pool, space_id, limit, &embedding_config).await
+        }
+        EmbeddingBackendType::LlamaCpp => {
+            process_space_llamacpp(app_handle, pool, space_id, limit, &embedding_config).await
         }
         EmbeddingBackendType::OpenAICompat => {
             process_space_standard(
@@ -256,6 +259,206 @@ async fn process_space_vecbox(
     .emit(&app_handle)?;
 
     Ok(())
+}
+
+async fn process_space_llamacpp(
+    app_handle: AppHandle,
+    pool: &DbPool,
+    space_id: i32,
+    limit: i32,
+    embedding_config: &crate::database::models::EmbeddingConfig,
+) -> Result<()> {
+    let media_marker = if embedding_config.fetch_marker_from_server.unwrap_or(false) {
+        LlamaCppClient::fetch_media_marker(&embedding_config.api_base_url)
+            .await
+            .context("failed to fetch media marker from llama.cpp server")?
+    } else {
+        embedding_config
+            .media_marker
+            .clone()
+            .unwrap_or_else(|| "<__media__>".to_string())
+    };
+
+    let llamacpp_client = LlamaCppClient::new(
+        &embedding_config.api_base_url,
+        &embedding_config.model,
+        Some(media_marker),
+    );
+
+    let pending_files = get_pending_files_for_space(pool, space_id, limit)
+        .await
+        .context("failed to get pending indexed files")?;
+
+    if pending_files.is_empty() {
+        return Ok(());
+    }
+
+    let total_files = pending_files.len() as i32;
+    let mut chunks_to_add: Vec<AddFileChunk> = Vec::new();
+    let mut updates_to_add: Vec<MarkFileAsIndexed> = Vec::new();
+
+    for (i, file) in pending_files.iter().enumerate() {
+        let file_id = file.id;
+        let file_path = &file.absolute_path;
+        let guess = mime_guess::from_path(file_path);
+        let mime_type = guess.first_or_octet_stream();
+
+        let result = match mime_type.type_() {
+            mime::IMAGE => process_image_llamacpp(file_path, &llamacpp_client, embedding_config)
+                .await
+                .map(|(emb, desc)| {
+                    vec![(
+                        TextChunk {
+                            content: desc,
+                            start_char_idx: 0,
+                            end_char_idx: 0,
+                        },
+                        emb,
+                    )]
+                }),
+            mime::TEXT => process_text_llamacpp(file_path, &llamacpp_client).await,
+            _ => continue,
+        };
+
+        match result {
+            Ok(processed) => {
+                if mime_type.type_() == mime::IMAGE {
+                    let (chunk, embedding) = processed.into_iter().next().unwrap();
+                    chunks_to_add.push(AddFileChunk {
+                        file_id,
+                        chunk_index: 0,
+                        content: chunk.content.clone(),
+                        start_char_idx: None,
+                        end_char_idx: None,
+                        embedding,
+                    });
+                    updates_to_add.push(MarkFileAsIndexed {
+                        file_id,
+                        description: Some(chunk.content),
+                    });
+                } else {
+                    for (chunk_idx, (chunk, embedding)) in processed.into_iter().enumerate() {
+                        chunks_to_add.push(AddFileChunk {
+                            file_id,
+                            chunk_index: chunk_idx as i32,
+                            content: chunk.content,
+                            start_char_idx: Some(chunk.start_char_idx),
+                            end_char_idx: Some(chunk.end_char_idx),
+                            embedding,
+                        });
+                    }
+                    updates_to_add.push(MarkFileAsIndexed {
+                        file_id,
+                        description: None,
+                    });
+                }
+
+                StatusEvent {
+                    status: StatusType::Processing,
+                    message: Some("Processing Space".to_string()),
+                    total: Some(total_files),
+                    processed: Some(i as i32),
+                }
+                .emit(&app_handle)?;
+            }
+            Err(e) => {
+                println!("failed to process file {:?}: {}", file_path, e);
+                continue;
+            }
+        }
+    }
+
+    add_chunks_batch(pool, chunks_to_add)
+        .await
+        .context("failed to add chunks in batch")?;
+
+    mark_file_as_indexed_batch(pool, updates_to_add)
+        .await
+        .context("failed to update file indexing status")?;
+
+    StatusEvent {
+        status: StatusType::Idle,
+        message: None,
+        total: None,
+        processed: None,
+    }
+    .emit(&app_handle)?;
+
+    StatusEvent {
+        status: StatusType::Notification,
+        message: Some("Space Processed".to_string()),
+        total: None,
+        processed: None,
+    }
+    .emit(&app_handle)?;
+
+    Ok(())
+}
+
+async fn process_image_llamacpp(
+    image_path: &str,
+    llamacpp_client: &LlamaCppClient,
+    embedding_config: &crate::database::models::EmbeddingConfig,
+) -> Result<(Vec<f32>, String)> {
+    let image_b64 = LlamaCppClient::image_to_base64(image_path)
+        .await
+        .context("failed to read image as base64")?;
+
+    let user_prompt = embedding_config
+        .image_processing_prompt
+        .as_ref()
+        .map(|p| p.user_prompt.as_str())
+        .unwrap_or("Describe this image.");
+
+    let embedding = llamacpp_client
+        .create_image_embedding(&image_b64, user_prompt)
+        .await
+        .context("failed to create llamacpp image embedding")?;
+
+    let filename = std::path::Path::new(image_path)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("image")
+        .to_string();
+
+    Ok((embedding, format!("image: {}", filename)))
+}
+
+async fn process_text_llamacpp(
+    file_path: &str,
+    llamacpp_client: &LlamaCppClient,
+) -> Result<Vec<(TextChunk, Vec<f32>)>> {
+    let content = tokio::fs::read_to_string(file_path)
+        .await
+        .unwrap_or_default();
+
+    let filename = std::path::Path::new(file_path)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("file")
+        .to_string();
+
+    if content.trim().is_empty() {
+        let chunk = create_empty_chunk(&filename);
+        let embedding = llamacpp_client
+            .create_text_embedding(&chunk.content)
+            .await
+            .context("failed to create llamacpp text embedding")?;
+        return Ok(vec![(chunk, embedding)]);
+    }
+
+    let chunks = chunk_text(&content);
+    let mut results: Vec<(TextChunk, Vec<f32>)> = Vec::new();
+
+    for chunk in chunks {
+        let embedding = llamacpp_client
+            .create_text_embedding(&chunk.content)
+            .await
+            .context("failed to create llamacpp text embedding")?;
+        results.push((chunk, embedding));
+    }
+
+    Ok(results)
 }
 
 async fn process_space_standard(

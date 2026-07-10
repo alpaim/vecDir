@@ -144,8 +144,8 @@ statusEvent: "status-event"
 export type AIPrompt = { system_prompt: string; user_prompt: string }
 export type AppConfig = { theme?: string; indexer_parallelism?: number; default_openai_url: string | null }
 export type BackendReadyEvent = null
-export type EmbeddingBackendType = "openai_compat" | "vecbox"
-export type EmbeddingConfig = { backend?: EmbeddingBackendType; api_base_url: string; api_key: string; model: string }
+export type EmbeddingBackendType = "openai_compat" | "vecbox" | "llamacpp"
+export type EmbeddingConfig = { backend?: EmbeddingBackendType; api_base_url: string; api_key: string; model: string; media_marker?: string | null; image_processing_prompt?: AIPrompt | null; fetch_marker_from_server?: boolean | null }
 export type ErrorEvent = { message: string; context: string | null }
 export type FileMetadata = { id: number; root_id: number; absolute_path: string; filename: string; file_extension: string; file_size: number; description: string | null; modified_at_fs: string; last_indexed_at: string | null; content_hash: string | null; indexing_status: string; indexing_error_message: string | null }
 export type IndexedRoot = { id: number; space_id: number; path: string; status: string }

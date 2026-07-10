@@ -146,6 +146,7 @@ export function CreateSpace() {
                                         <SelectContent>
                                             <SelectItem value="openai_compat">OpenAI Compatible (LLM + Embedding)</SelectItem>
                                             <SelectItem value="vecbox">VecBox (Multimodal Embeddings)</SelectItem>
+                                            <SelectItem value="llamacpp">LlamaCpp (Multimodal Embeddings)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -155,6 +156,85 @@ export function CreateSpace() {
                             {(backend) => {
                                 if (backend === "vecbox")
                                     return null;
+                                if (backend === "llamacpp") {
+                                    return (
+                                        <>
+                                            <form.Field name="embeddingConfig.media_marker">
+                                                {field => (
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor={field.name}>Media Marker</Label>
+                                                        <Input
+                                                            id={field.name}
+                                                            name={field.name}
+                                                            value={field.state.value ?? ""}
+                                                            onBlur={field.handleBlur}
+                                                            onChange={e => field.handleChange(e.target.value || undefined)}
+                                                            placeholder="<__media__>"
+                                                            className="border-border"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </form.Field>
+                                            <form.Field name="embeddingConfig.fetch_marker_from_server">
+                                                {field => (
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor={field.name}>Fetch Marker from Server (/props)</Label>
+                                                        <Select
+                                                            value={field.state.value ? "true" : "false"}
+                                                            onValueChange={value => field.handleChange(value === "true")}
+                                                        >
+                                                            <SelectTrigger id={field.name}>
+                                                                <SelectValue placeholder="No" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="false">No (use marker above)</SelectItem>
+                                                                <SelectItem value="true">Yes (fetch from /props)</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                )}
+                                            </form.Field>
+                                            <Card className="p-5">
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <FileImage />
+                                                    <h3 className="text-l font-semibold">Image Processing Prompt</h3>
+                                                </div>
+                                                <form.Field name="embeddingConfig.image_processing_prompt.system_prompt">
+                                                    {field => (
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor={field.name}>System Prompt</Label>
+                                                            <Input
+                                                                id={field.name}
+                                                                name={field.name}
+                                                                value={field.state.value ?? ""}
+                                                                onBlur={field.handleBlur}
+                                                                onChange={e => field.handleChange(e.target.value)}
+                                                                placeholder="System Prompt"
+                                                                className="border-border"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </form.Field>
+                                                <form.Field name="embeddingConfig.image_processing_prompt.user_prompt">
+                                                    {field => (
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor={field.name}>User Prompt</Label>
+                                                            <Input
+                                                                id={field.name}
+                                                                name={field.name}
+                                                                value={field.state.value ?? ""}
+                                                                onBlur={field.handleBlur}
+                                                                onChange={e => field.handleChange(e.target.value)}
+                                                                placeholder="Describe this image."
+                                                                className="border-border"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </form.Field>
+                                            </Card>
+                                        </>
+                                    );
+                                }
                                 return (
                                     <>
                                         <div className="flex items-center gap-2 mb-4 mt-6">

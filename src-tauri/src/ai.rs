@@ -19,6 +19,7 @@ use base64::Engine;
 use serde::{Deserialize, Serialize};
 
 pub mod embedding;
+pub mod llamacpp;
 pub mod llm;
 pub mod vecbox;
 
